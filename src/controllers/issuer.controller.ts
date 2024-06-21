@@ -1,106 +1,117 @@
-import { Request, Response } from 'express';
-import { IssuerModel, Issuer } from '../models/issuer.model';
-import mongoose from 'mongoose';
+import { Request, Response } from 'express'
+import { IssuerModel, Issuer } from '../models/issuer.model'
+import mongoose from 'mongoose'
 
-export const handleCreateIssuer = async (req: Request, res: Response): Promise<void> => {
+export const handleCreateIssuer = async (req: Request, res: Response): Promise<Response> => {
   try {
-    // const { IssuerName, businessMail } = req.body;
-    const { email,uid } = req.body;
+    const { issuerName, email, uid } = req.body;
 
     const newIssuer: Issuer = new IssuerModel({
-      businessMail:email,
-      firebaseUid:uid
+      issuerName: issuerName,
+      businessMail: email,
+      firebaseUid: uid
     });
 
+    const issuer = await IssuerModel.findOne({businessMail: email}).exec();
+
+    if(issuer) {
+      return res.json({ message: 'This email is already exist.Please sign in' });
+    }
+
     const createdIssuer = await newIssuer.save();
-    res.status(201).json(createdIssuer);
+    return res.status(201).json(createdIssuer);
   } catch (error) {
       if (error instanceof mongoose.Error) {
-        res.status(400).json({ error: error.message });
+        return res.status(400).json({ error: error.message });
       } else {
-        res.status(500).json({ error: 'Internal server error' });
+        return res.status(500).json({ error: 'Internal server error' });
       }
     }
 };
 
 //Read
-export const handleGetIssuerById = async (req: Request, res: Response): Promise<void> => {
+export const handleGetIssuerById = async (req: Request, res: Response): Promise<Response> => {
   try {
-    const { IssuerId } = req.params;
-
-    if (!mongoose.Types.ObjectId.isValid(IssuerId)) {
-      res.status(400).json({ error: 'Invalid Issuer ID' });
-      return;
+    if (!req.user || !req.issuerId) {
+      return res.status(401).json({ error: 'Unauthorized (user not found)' });
     }
 
-    const Issuer = await IssuerModel.findById(IssuerId).exec();
-
-    if (!Issuer) {
-      res.status(404).json({ error: 'Issuer not found' });
-      return;
+    if (!mongoose.Types.ObjectId.isValid(req.issuerId)) {
+      return res.status(400).json({ error: 'Invalid issuer ID' });
     }
 
-    res.json(Issuer);
+    const issuer = await IssuerModel.findById(req.issuerId).exec();
+
+    if (!issuer) {
+      return res.status(404).json({ error: 'Issuer not found' });
+    }
+
+    return res.json(issuer);
   } catch (error) {
       if (error instanceof mongoose.Error) {
-        res.status(400).json({ error: error.message });
+        return res.status(400).json({ error: error.message });
       } else {
-        res.status(500).json({ error: 'Internal server error' });
+        return res.status(500).json({ error: 'Internal server error' });
       }
     }
 };
 
 //Update
-export const handleUpdateIssuerById = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const { IssuerId } = req.params;
-    const updateData = req.body;
+export const handleUpdateIssuerById = async (req: Request, res: Response): Promise<Response> => {
+  const { issuerName } = req.body;
 
-    if (!mongoose.Types.ObjectId.isValid(IssuerId)) {
-      res.status(400).json({ error: 'Invalid Issuer ID' });
-      return;
+  try {
+    if (!req.user || !req.issuerId) {
+      return res.status(401).json({ error: 'Unauthorized (user not found)' });
     }
 
-    const updatedIssuer = await IssuerModel.findByIdAndUpdate(IssuerId, updateData, { new: true }).exec();
+    if (!mongoose.Types.ObjectId.isValid(req.issuerId)) {
+      return res.status(400).json({ error: 'Invalid Issuer ID' });
+    }
+
+    const updatedIssuer = await IssuerModel.findByIdAndUpdate(
+      req.issuerId,
+      { issuerName: req.body.issuerName },
+      { new: true }
+    ).exec();
 
     if (!updatedIssuer) {
-      res.status(404).json({ error: 'Issuer not found' });
-      return;
+      return res.status(404).json({ error: 'Issuer not found' });
     }
 
-    res.json(updatedIssuer);
+    return res.json(updatedIssuer);
   } catch (error) {
       if (error instanceof mongoose.Error) {
-        res.status(400).json({ error: error.message });
+        return res.status(400).json({ error: error.message });
       } else {
-        res.status(500).json({ error: 'Internal server error' });
+        return res.status(500).json({ error: 'Internal server error' });
       }
     }
 };
 
 //Delete
-export const handleDeleteIssuerById = async (req: Request, res: Response): Promise<void> => {
+export const handleDeleteIssuerById = async (req: Request, res: Response): Promise<Response> => {
   try {
-    const { IssuerId } = req.params;
-
-    if (!mongoose.Types.ObjectId.isValid(IssuerId)) {
-      res.status(400).json({ error: 'Invalid Issuer ID' });
-      return;
+    if (!req.user || !req.issuerId) {
+      return res.status(401).json({ error: 'Unauthorized (user not found)' });
     }
 
-    const deletedIssuer = await IssuerModel.findByIdAndDelete(IssuerId).exec();
+    if (!mongoose.Types.ObjectId.isValid(req.issuerId)) {
+      return res.status(400).json({ error: 'Invalid Issuer ID' });
+    }
+
+    const deletedIssuer = await IssuerModel.findByIdAndDelete(req.issuerId).exec();
 
     if (!deletedIssuer) {
-      res.status(404).json({ error: 'Issuer not found' });
-      return;
+      return res.status(404).json({ error: 'Issuer not found' });
     }
 
-    res.json({ message: 'Issuer deleted successfully' });
+    return res.json({ message: 'Issuer deleted successfully' });
   } catch (error) {
     if (error instanceof mongoose.Error) {
-      res.status(400).json({ error: error.message });
+      return res.status(400).json({ error: error.message });
     } else {
-      res.status(500).json({ error: 'Internal server error' });
+      return res.status(500).json({ error: 'Internal server error' });
     }
   }
 };

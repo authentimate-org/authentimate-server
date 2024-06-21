@@ -32,6 +32,8 @@ async function authMiddleware(req: Request, res: Response, next: NextFunction) {
   if (!authorizationHeader) {
     return res.status(401).send('Unauthorized (no authorization header)');
   }
+  // console.log('Authorization Header:', authorizationHeader);
+
 
   const idToken = authorizationHeader.split(' ')[1];
 

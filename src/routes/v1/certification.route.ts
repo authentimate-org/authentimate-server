@@ -1,16 +1,17 @@
-import express from 'express';
-const router = express.Router();
-import { handleCreateCertification, handleGetCertificationById, handleDeleteCertificationById } from '../../controllers/certification.controller'; 
+import express from 'express'
+const router = express.Router()
+import { handleCreateCertification, handleGetCertificationById } from '../../controllers/certification.controller'
+
 
 
 router
-.route('/')
+.route('/create')
 .post(handleCreateCertification);
 
 router
-.route('/:certificationId')
-.get(handleGetCertificationById)
-// .put(handleUpdateCertificationById)
-.delete(handleDeleteCertificationById)
+.route('/read')
+.post(handleGetCertificationById);
+
+
 
 export default router;

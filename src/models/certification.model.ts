@@ -1,13 +1,13 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
-interface certification {
+interface Certification {
     issuerId: mongoose.Types.ObjectId | undefined;
     recipientId:mongoose.Types.ObjectId | undefined;
     projectId: mongoose.Types.ObjectId | unknown;
     imageURL: string | undefined;
 }
 
-const certificationSchema = new Schema<certification>({
+const certificationSchema = new Schema<Certification>({
     issuerId: {
         type: Schema.Types.ObjectId,
         ref: 'issuer',
@@ -28,5 +28,5 @@ const certificationSchema = new Schema<certification>({
     }
 });
 
-const certificationModel = mongoose.model<certification>('certification', certificationSchema);
-export { certificationModel, certification };
+const CertificationModel = mongoose.model<Certification>('certification', certificationSchema);
+export { CertificationModel, Certification };

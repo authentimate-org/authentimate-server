@@ -1,96 +1,107 @@
 import { Request, Response } from 'express';
-import { modifiedTemplate, modifiedTemplateModel } from '../models/modifiedTemplate.model';
-import { recipientModel, recipient } from '../models/recipient.model';
-import { certificationModel, certification } from '../models/certification.model';
 import mongoose from 'mongoose';
+import { RecipientModel, Recipient } from '../models/recipient.model';
+import { CertificationModel, Certification } from '../models/certification.model';
 
 //Create
-export const handleCreateRecipient = async ( req: Request, res: Response, certificationId: mongoose.Schema.Types.ObjectId | unknown, recipient: object ): Promise<void> => {
+export const handleCreateRecipient = async ( req: Request, res: Response, certificationId: mongoose.Schema.Types.ObjectId | unknown, recipient: object ): Promise<boolean> => {
   try {
-    const { projectId }  = req.body;
-    const newRecipient: recipient = new recipientModel(recipient);
+    const newRecipient: Recipient = new RecipientModel(recipient);
 
-    const createdRecipient = new recipientModel(newRecipient);
+    const createdRecipient = new RecipientModel(newRecipient);
     await createdRecipient.save();
 
-    await certificationModel.findByIdAndUpdate(certificationId, { recipientId: createdRecipient._id }, { new: true }).exec();
+    if (!createdRecipient) {
+      await CertificationModel.findByIdAndDelete(certificationId);
+      return false;
+    }
 
-    await recipientModel.findByIdAndUpdate(createdRecipient._id, { $push: { achievedCertifications: certificationId } }, { new: true }).exec();
+    await CertificationModel.findByIdAndUpdate(
+      certificationId,
+      { recipientId: createdRecipient._id },
+      { new: true }
+    ).exec();
 
-    // res.json({ message: 'Recipient created successfully' });
+    await RecipientModel.findByIdAndUpdate(
+      createdRecipient._id,
+      { $push: { achievedCertifications: certificationId } },
+      { new: true }
+    ).exec();
+
+    return true;
   } 
   catch (error) {
-      // if (error instanceof mongoose.Error) {
-      //   res.status(400).json({ error: error.message });
-      // } else {
-      //   res.status(500).json({ error: 'Internal server error' });
-      // }
+      if (error instanceof mongoose.Error) {
+        res.status(400).json({ error: error.message });
+        return false;
+      } else {
+        res.status(500).json({ error: 'Internal server error' });
+        return false;
+      }
     }
 };
 
 //Read
-export const handleGetRecipientById = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const { recipientId } = req.params;
+export const handleGetRecipientById = async (req: Request, res: Response): Promise<Response> => {
+  const { recipientId } = req.body;
 
+  try {
     if (!mongoose.Types.ObjectId.isValid(recipientId)) {
-      res.status(400).json({ error: 'Invalid recipient ID' });
-      return;
+      return res.status(400).json({ error: 'Invalid recipient ID' });
     }
 
-    const recipient = await recipientModel.findById(recipientId).exec();
+    const recipient = await RecipientModel.findById(recipientId).exec();
 
     if (!recipient) {
-      res.status(404).json({ error: 'Recipient not found' });
-      return;
+      return res.status(404).json({ error: 'Recipient not found' });
     }
 
-    res.json(recipient);
+    return res.json(recipient);
   } catch (error) {
       if (error instanceof mongoose.Error) {
-        res.status(400).json({ error: error.message });
+        return res.status(400).json({ error: error.message });
       } else {
-        res.status(500).json({ error: 'Internal server error' });
+        return res.status(500).json({ error: 'Internal server error' });
       }
     }
 };
 
 //Update
-export const handleUpdateRecipientById = async ( req: Request, res: Response, recipientId: mongoose.Schema.Types.ObjectId | string | unknown ): Promise<void> => {
-  try {
-    const recepientName = req.body.recepientName;
+// export const handleUpdateRecipientById = async ( req: Request, res: Response, recipientId: mongoose.Schema.Types.ObjectId | string | unknown ): Promise<void> => {
+//   try {
+//     const recepientName = req.body.recepientName;
 
-    const updatedRecipient = await recipientModel.findByIdAndUpdate(recipientId, { recipientName: recepientName }, { new: true }).exec();
+//     const updatedRecipient = await recipientModel.findByIdAndUpdate(recipientId, { recipientName: recepientName }, { new: true }).exec();
 
-    if (!updatedRecipient) {
-      res.status(404).json({ error: 'Recipient not found' });
-      return;
-    }
-  } catch (error) {
-      if (error instanceof mongoose.Error) {
-        res.status(400).json({ error: error.message });
-      } else {
-        res.status(500).json({ error: 'Internal server error' });
-      }
-    }
-};
+//     if (!updatedRecipient) {
+//       res.status(404).json({ error: 'Recipient not found' });
+//       return;
+//     }
+//   } catch (error) {
+//       if (error instanceof mongoose.Error) {
+//         res.status(400).json({ error: error.message });
+//       } else {
+//         res.status(500).json({ error: 'Internal server error' });
+//       }
+//     }
+// };
 
 //Delete
-export const handleDeleteRecipientById = async (req: Request, res: Response, recipientId: mongoose.Schema.Types.ObjectId | string | unknown ): Promise<void> => {
-  try {
-    const deletedRecipient = await recipientModel.findByIdAndDelete(recipientId).exec();
+// export const handleDeleteRecipientById = async (req: Request, res: Response, recipientId: mongoose.Schema.Types.ObjectId | string | unknown ): Promise<void> => {
+//   try {
+//     const deletedRecipient = await recipientModel.findByIdAndDelete(recipientId).exec();
 
-    if (!deletedRecipient) {
-      res.status(404).json({ error: 'Recipient not found' });
-      return;
-    }
+//     if (!deletedRecipient) {
+//       res.status(404).json({ error: 'Recipient not found' });
+//       return;
+//     }
 
-    res.json({ message: 'Recipient deleted successfully' });
-  } catch (error) {
-    if (error instanceof mongoose.Error) {
-      res.status(400).json({ error: error.message });
-    } else {
-      res.status(500).json({ error: 'Internal server error' });
-    }
-  }
-};
+//     res.json({ message: 'Recipient deleted successfully' });
+//   } catch (error) {
+//     if (error instanceof mongoose.Error) {
+//       res.status(400).json({ error: error.message });
+//     } else {
+//       res.status(500).json({ error: 'Internal server error' });
+//     }
+//   }
+// };

@@ -1,141 +1,144 @@
-import { Request, Response } from 'express';
-import { project, projectModel } from '../models/project.model';
-import { modifiedTemplate, modifiedTemplateModel } from '../models/modifiedTemplate.model';
-import { handleCreateRecipient , handleUpdateRecipientById, handleDeleteRecipientById } from './recipient.controller';
-import mongoose from 'mongoose';
+import { Request, Response } from 'express'
+import mongoose from 'mongoose'
+import { ProjectModel } from '../models/project.model'
+import { ModifiedTemplate, ModifiedTemplateModel } from '../models/modifiedTemplate.model'
 
 //Create
-export const handleCreateModifiedTemplate = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const { projectId, templateId, texts, recipientName, graphicElements, bgColor } = req.body;
+export const handleCreateModifiedTemplate = async (req: Request, res: Response): Promise<Response> => {
+  const { projectId, texts, recipientName, graphicElements, bgColor } = req.body;
 
-    const newModifiedTemplate: modifiedTemplate = {
+  try {
+    if (!mongoose.Types.ObjectId.isValid(projectId)) {
+      return res.status(400).json({ error: 'Invalid project ID' });
+    }
+
+    const project =  await ProjectModel.findById(projectId).exec();
+
+    if (!project) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+    
+    const premadeTemplateId = project.templateId;
+
+    if (!premadeTemplateId) {
+      return res.json({ error: 'No template has been selected yet' });
+    }
+
+    const newModifiedTemplate: ModifiedTemplate = {
       projectId,
-      templateId,
+      templateId: premadeTemplateId,
       texts,
       recipientName,
       graphicElements,
       bgColor
-  };
+    };
 
-    const project =  await projectModel.findById(projectId).exec();
-
-    if(project?.stage !== 'PROJECT_CREATED' && project?.stage !== 'TEMPLATE_SELECTED') {
-      res.json({ message: 'A template is already finalised for this project' });
-      return ;
+    if(project.stage === 'TEMPLATE_FINALISED' || project.stage === 'ISSUED') {
+      return res.json({ message: 'A template is already finalised for this project' });
     }
 
-    const createdModifiedTemplate = new modifiedTemplateModel(newModifiedTemplate);
+    const createdModifiedTemplate = new ModifiedTemplateModel(newModifiedTemplate);
     await createdModifiedTemplate.save();
 
-    await projectModel.findByIdAndUpdate(projectId, { modifiedTemplateId: createdModifiedTemplate._id, stage: 'TEMPLATE_FINALISED' }, { new: true }).exec();
+    await ProjectModel.findByIdAndUpdate(
+      projectId,
+      { modifiedTemplateId: createdModifiedTemplate._id, stage: 'TEMPLATE_FINALISED' },
+      { new: true }
+    ).exec();
 
-    res.status(201).json(createdModifiedTemplate);
+    return res.status(201).json(createdModifiedTemplate);
   } catch (error) {
       if (error instanceof mongoose.Error) {
-        res.status(400).json({ error: error.message });
+        return res.status(400).json({ error: error.message });
       } else {
-        res.status(500).json({ error: 'Internal server error' });
+        return res.status(500).json({ error: 'Internal server error' });
       }
     }
 };
 
 //Read One
-export const handleGetModifiedTemplateById = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const { modifiedTemplateId } = req.params;
+export const handleGetModifiedTemplateById = async (req: Request, res: Response): Promise<Response> => {
+  const { modifiedTemplateId } = req.body;
 
+  try {
     if (!mongoose.Types.ObjectId.isValid(modifiedTemplateId)) {
-      res.status(400).json({ error: 'Invalid modified template ID' });
-      return;
+      return res.status(400).json({ error: 'Invalid modified template ID' });
     }
 
-    const modifiedTemplate = await modifiedTemplateModel.findById(modifiedTemplateId);
+    const modifiedTemplate = await ModifiedTemplateModel.findById(modifiedTemplateId);
 
     if (!modifiedTemplate) {
-      res.status(404).json({ error: 'Modified template not found' });
-      return;
+      return res.status(404).json({ error: 'Modified template not found' });
     }
     
-    res.status(200).json(modifiedTemplate);
+    return res.status(200).json(modifiedTemplate);
   } catch (error) {
       if (error instanceof mongoose.Error) {
-        res.status(400).json({ error: error.message });
+        return res.status(400).json({ error: error.message });
       } else {
-        res.status(500).json({ error: 'Internal server error' });
+        return res.status(500).json({ error: 'Internal server error' });
       }
     }
 };
 
 //Update
-export const handleUpdateModifiedTemplateById = async (req: Request, res: Response): Promise<void> => {
+export const handleUpdateModifiedTemplateById = async (req: Request, res: Response): Promise<Response> => {
+  const { modifiedTemplateId, texts, recipientName, graphicElements, bgColor } = req.body;
+
   try {
-    const { modifiedTemplateId } = req.params;
-    const updateData = req.body;
-
     if (!mongoose.Types.ObjectId.isValid(modifiedTemplateId)) {
-      res.status(400).json({ error: 'Invalid modified template ID' });
-      return;
+      return res.status(400).json({ error: 'Invalid modified template ID' });
     }
 
-    const modifiedTemplate =  await modifiedTemplateModel.findById(modifiedTemplateId).exec();
-
-    if (!modifiedTemplate) {
-      res.status(404).json({ error: 'Modified template not found' });
-      return ;
-    }
-
-    const project =  await projectModel.findById(updateData.projectId).exec();
-
-    if(project?.modifiedTemplateId.toString() !== modifiedTemplateId) {
-      res.json({ message: 'modified template ID did not match' });
-      return ;
-    }
-
-    const updatedModifiedTemplate = await modifiedTemplateModel.findByIdAndUpdate(modifiedTemplateId, updateData, { new: true });
+    const updatedModifiedTemplate = await ModifiedTemplateModel.findByIdAndUpdate(
+      modifiedTemplateId,
+      { texts: texts, recipientName: recipientName, graphicElements: graphicElements, bgColor: bgColor },
+      { new: true }
+    );
     
     if (!updatedModifiedTemplate) {
-      res.status(404).json({ error: 'Modified template not found' });
-      return;
+      return res.status(404).json({ error: 'Modified template not found' });
     }
 
-    res.status(200).json(updatedModifiedTemplate);
+    return res.status(200).json(updatedModifiedTemplate);
 } catch (error) {
     if (error instanceof mongoose.Error) {
-      res.status(400).json({ error: error.message });
+      return res.status(400).json({ error: error.message });
     } else {
-      res.status(500).json({ error: 'Internal server error' });
+      return res.status(500).json({ error: 'Internal server error' });
     }
   }
 };
 
 //Delete
-export const handleDeleteModifiedTemplateById = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const { modifiedTemplateId } = req.params;
+export const handleDeleteModifiedTemplateById = async (req: Request, res: Response): Promise<Response> => {
+  const { modifiedTemplateId } = req.body;
 
+  try {
     if (!mongoose.Types.ObjectId.isValid(modifiedTemplateId)) {
-      res.status(400).json({ error: 'Invalid modifiedTemplate ID' });
-      return;
+      return res.status(400).json({ error: 'Invalid modifiedTemplate ID' });
     }
 
-    const modifiedTemplate = await modifiedTemplateModel.findById(modifiedTemplateId);
+    const modifiedTemplate = await ModifiedTemplateModel.findById(modifiedTemplateId);
 
     if (!modifiedTemplate) {
-      res.status(404).json({ error: 'Modified template not found' });
-      return;
+      return res.status(404).json({ error: 'Modified template not found' });
     }
 
-    await projectModel.findByIdAndUpdate(modifiedTemplate.projectId, { modifiedTemplateId: null, stage: 'TEMPLATE_SELECTED' }, { new: true }).exec();
+    await ProjectModel.findByIdAndUpdate(
+      modifiedTemplate.projectId,
+      { modifiedTemplateId: null, stage: 'TEMPLATE_SELECTED' },
+      { new: true }
+    ).exec();
     
-    await modifiedTemplateModel.findByIdAndDelete(modifiedTemplateId);
+    await ModifiedTemplateModel.findByIdAndDelete(modifiedTemplateId);
         
-    res.status(200).json({ message: 'Modified template deleted successfully' });
+    return res.status(200).json({ message: 'Modified template deleted successfully' });
   } catch (error) {
       if (error instanceof mongoose.Error) {
-        res.status(400).json({ error: error.message });
+        return res.status(400).json({ error: error.message });
       } else {
-        res.status(500).json({ error: 'Internal server error' });
+        return res.status(500).json({ error: 'Internal server error' });
       }
     }
 };

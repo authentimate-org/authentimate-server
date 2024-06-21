@@ -46,5 +46,5 @@ const projectSchema = new Schema<Project>({
   }
 });
 
-const projectModel = mongoose.model<Project>('project', projectSchema);
-export { Project, projectModel };
+const ProjectModel = mongoose.model<Project>('project', projectSchema);
+export { Project, ProjectModel };

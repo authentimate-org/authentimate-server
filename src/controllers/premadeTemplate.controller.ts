@@ -1,13 +1,13 @@
-import { Request, Response } from 'express';
-import { premadeTemplate, premadeTemplateModel } from '../models/premadeTemplate.model';
-import mongoose from 'mongoose';
+import { Request, Response } from 'express'
+import mongoose from 'mongoose'
+import { PremadeTemplate, PremadeTemplateModel } from '../models/premadeTemplate.model'
 
 //Create
-export const handleCreatePremadeTemplate = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const { texts, recipientName, graphicElements, bgColor, templateImageURL } = req.body;
+export const handleCreatePremadeTemplate = async (req: Request, res: Response): Promise<Response> => {
+  const { texts, recipientName, graphicElements, bgColor, templateImageURL } = req.body;
 
-    const newPremadeTemplate: premadeTemplate = {
+  try {
+    const newPremadeTemplate: PremadeTemplate = {
       texts,
       recipientName,
       graphicElements,
@@ -15,51 +15,59 @@ export const handleCreatePremadeTemplate = async (req: Request, res: Response): 
       templateImageURL
     };
 
-    const createdPremadeTemplate = new premadeTemplateModel(newPremadeTemplate);
+    const createdPremadeTemplate = new PremadeTemplateModel(newPremadeTemplate);
     await createdPremadeTemplate.save();
 
-    res.status(201).json(createdPremadeTemplate);
+    return res.status(201).json(createdPremadeTemplate);
   } catch (error) {
       if (error instanceof mongoose.Error) {
-        res.status(400).json({ error: error.message });
+        return res.status(400).json({ error: error.message });
       } else {
-        res.status(500).json({ error: 'Internal server error' });
+        return res.status(500).json({ error: 'Internal server error' });
       }
     }
 };
 
 //Read All
-export const handleGetAllPremadeTemplates = async (req: Request, res: Response): Promise<void> => {
+export const handleGetAllPremadeTemplates = async (req: Request, res: Response): Promise<Response> => {
   try {
-    const allPremadeTemplates = await premadeTemplateModel.find({});
+    const allPremadeTemplates = await PremadeTemplateModel.find({});
 
-    res.status(200).json(allPremadeTemplates);
+    if (!allPremadeTemplates) {
+      return res.status(404).json({ error: 'Premade templates not found' });
+    }
+
+    return res.status(200).json(allPremadeTemplates);
   } catch (error) {
       if (error instanceof mongoose.Error) {
-        res.status(400).json({ error: error.message });
+        return res.status(400).json({ error: error.message });
       } else {
-        res.status(500).json({ error: 'Internal server error' });
+        return res.status(500).json({ error: 'Internal server error' });
       }
     }
 };
 
 //Read One
-export const handleGetPremadeTemplateById = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const { premadeTemplateId } = req.params;
-    const premadeTemplate = await premadeTemplateModel.findById(premadeTemplateId);
+export const handleGetPremadeTemplateById = async (req: Request, res: Response): Promise<Response> => {
+  const { premadeTemplateId } = req.body;
 
-    if (!premadeTemplate) {
-      res.status(404).json({ error: 'Premade template not found' });
-      return;
+  try {
+    if (!mongoose.Types.ObjectId.isValid(premadeTemplateId)) {
+      return res.status(400).json({ error: 'Invalid pemade template ID' });
     }
 
-    res.status(200).json(premadeTemplate);
+    const premadeTemplate = await PremadeTemplateModel.findById(premadeTemplateId);
+
+    if (!premadeTemplate) {
+      return res.status(404).json({ error: 'Premade template not found' });
+    }
+
+    return res.status(200).json(premadeTemplate);
   } catch (error) {
       if (error instanceof mongoose.Error) {
-        res.status(400).json({ error: error.message });
+        return res.status(400).json({ error: error.message });
       } else {
-        res.status(500).json({ error: 'Internal server error' });
+        return res.status(500).json({ error: 'Internal server error' });
       }
     }
 };
@@ -68,28 +76,26 @@ export const handleGetPremadeTemplateById = async (req: Request, res: Response):
 
 
 //Delete One
-export const handleDeletePremadeTemplateById = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const { premadeTemplateId } = req.params;
+export const handleDeletePremadeTemplateById = async (req: Request, res: Response): Promise<Response> => {
+  const { premadeTemplateId } = req.params;
 
+  try {
     if (!mongoose.Types.ObjectId.isValid(premadeTemplateId)) {
-      res.status(400).json({ error: 'Invalid Premade template ID' });
-      return;
+      return res.status(400).json({ error: 'Invalid Premade template ID' });
     }
 
-    const deletedPremadeTemplate = await premadeTemplateModel.findByIdAndDelete(premadeTemplateId);
+    const deletedPremadeTemplate = await PremadeTemplateModel.findByIdAndDelete(premadeTemplateId);
 
     if (!deletedPremadeTemplate) {
-      res.status(404).json({ error: 'Premade template not found' });
-      return;
+      return res.status(404).json({ error: 'Premade template not found' });
     }
 
-    res.status(200).json({ message: 'Premade template deleted successfully' });
+    return res.status(200).json({ message: 'Premade template deleted successfully' });
   } catch (error) {
       if (error instanceof mongoose.Error) {
-        res.status(400).json({ error: error.message });
+        return res.status(400).json({ error: error.message });
       } else {
-        res.status(500).json({ error: 'Internal server error' });
+        return res.status(500).json({ error: 'Internal server error' });
       }
     }
 };

@@ -1,7 +1,5 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
-
-
 interface position {
     x: number;
     y: number;
@@ -28,7 +26,7 @@ interface graphicElement {
     size: size;
 }
 
-interface premadeTemplate {
+interface PremadeTemplate {
     texts: text[];
     recipientName: text;
     graphicElements: graphicElement[];
@@ -36,7 +34,7 @@ interface premadeTemplate {
     templateImageURL: String;
 };
 
-const premadeTemplateSchema = new Schema<premadeTemplate & Document>({
+const premadeTemplateSchema = new Schema<PremadeTemplate & Document>({
     texts: [{
         type: Schema.Types.Mixed,
         required: true
@@ -58,6 +56,6 @@ const premadeTemplateSchema = new Schema<premadeTemplate & Document>({
     }
 });
 
-const premadeTemplateModel = mongoose.model<premadeTemplate & Document>('premadeTemplate', premadeTemplateSchema);
+const PremadeTemplateModel = mongoose.model<PremadeTemplate & Document>('premadeTemplate', premadeTemplateSchema);
 
-export { premadeTemplate, premadeTemplateModel };
+export { PremadeTemplate, PremadeTemplateModel };

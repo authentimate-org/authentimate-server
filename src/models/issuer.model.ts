@@ -1,3 +1,4 @@
+import { triggerAsyncId } from 'async_hooks';
 import mongoose, { Document, Schema } from 'mongoose';
 
 interface Issuer extends Document {
@@ -27,7 +28,9 @@ const issuerSchema = new Schema<Issuer>({
         type: Schema.Types.ObjectId,
         ref: 'project'
     }]
-});
+},
+{timestamps: true}
+);
 
 const IssuerModel = mongoose.model<Issuer>('Issuer', issuerSchema);
 

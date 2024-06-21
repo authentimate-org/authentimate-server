@@ -27,16 +27,16 @@ interface graphicElement {
     size: size;
 }
 
-interface modifiedTemplate {
-    projectId: mongoose.Types.ObjectId | unknown,
-    templateId: mongoose.Schema.Types.ObjectId,
+interface ModifiedTemplate {
+    projectId: mongoose.Types.ObjectId,
+    templateId: mongoose.Schema.Types.ObjectId | unknown,
     texts: text[];
     recipientName: text;
     graphicElements: graphicElement[];
     bgColor: String;
 }
 
-const modifiedTemplateSchema = new Schema<modifiedTemplate & Document>({
+const modifiedTemplateSchema = new Schema<ModifiedTemplate & Document>({
     projectId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'project',
@@ -64,6 +64,6 @@ const modifiedTemplateSchema = new Schema<modifiedTemplate & Document>({
     },
 });
 
-const modifiedTemplateModel = mongoose.model<modifiedTemplate & Document>('modifiedTemplate', modifiedTemplateSchema);
+const ModifiedTemplateModel = mongoose.model<ModifiedTemplate & Document>('modifiedTemplate', modifiedTemplateSchema);
 
-export { modifiedTemplate, modifiedTemplateModel };
+export { ModifiedTemplate, ModifiedTemplateModel };

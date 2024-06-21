@@ -1,23 +1,22 @@
-import { Request, Response } from 'express';
-import { IssuerModel, Issuer } from '../models/issuer.model';
-import { Project, projectModel } from '../models/project.model';
-import mongoose from 'mongoose';
-import { modifiedTemplateModel } from '../models/modifiedTemplate.model';
-import { recipientModel } from '../models/recipient.model';
-import { certificationModel, certification } from '../models/certification.model';
-import { premadeTemplateModel } from '../models/premadeTemplate.model';
+import { Request, Response } from 'express'
+import mongoose from 'mongoose'
+import { IssuerModel } from '../models/issuer.model'
+import { Project, ProjectModel } from '../models/project.model'
+import { ModifiedTemplateModel } from '../models/modifiedTemplate.model'
+import { RecipientModel } from '../models/recipient.model'
+import { CertificationModel } from '../models/certification.model'
+import { PremadeTemplateModel } from '../models/premadeTemplate.model'
 
 // Create
 export const handleCreateProject = async (req: Request, res: Response): Promise<Response> => {
-  try {
-    const { projectName, category } = req.body;
+  const { projectName, category } = req.body;
 
-    console.log(req.issuerId)
+  try {
     if (!req.user || !req.issuerId) {
       return res.status(401).json({ error: 'Unauthorized (user not found)' });
     }
 
-    const newProject: Project = new projectModel({
+    const newProject: Project = new ProjectModel({
       projectName,
       category: category as 'EVENT' | 'COURSE' | 'COMPETITION',
       issuerId: req.issuerId,
@@ -36,213 +35,196 @@ export const handleCreateProject = async (req: Request, res: Response): Promise<
 };
 
 //Read All
-// export const handleGetAllProjectsByIssuerId = async (req: Request, res: Response): Promise<void> => {
-//   try {
-//     const issuerId = req.params.issuerId;
+export const handleGetAllProjectsByIssuerId = async (req: Request, res: Response): Promise<Response> => {
+  try {
+    if (!req.user || !req.issuerId) {
+      return res.status(401).json({ error: 'Unauthorized (user not found)' });
+    }
   
-//     if (!mongoose.Types.ObjectId.isValid(issuerId)) {
-//       res.status(400).json({ error: 'Invalid issuer ID' });
-//       return;
-//     }
+    if (!mongoose.Types.ObjectId.isValid(req.issuerId)) {
+      return res.status(400).json({ error: 'Invalid issuer ID' });
+    }
   
-//     const allProjects = await projectModel.find({issuerId: issuerId}).exec();
+    const allProjects = await ProjectModel.find({issuerId: req.issuerId}).exec();
   
-//     if (!allProjects) {
-//       res.status(404).json({ error: 'Projects not found' });
-//       return;
-//     }
+    if (!allProjects) {
+      return res.status(404).json({ error: 'Projects not found' });
+    }
   
-//     res.json(allProjects);
-//   } catch (error) {
-//       if (error instanceof mongoose.Error) {
-//         res.status(400).json({ error: error.message });
-//       } else {
-//         res.status(500).json({ error: 'Internal server error' });
-//       }
-//     }
-// };
+    return res.json(allProjects);
+  } catch (error) {
+      if (error instanceof mongoose.Error) {
+        return res.status(400).json({ error: error.message });
+      } else {
+        return res.status(500).json({ error: 'Internal server error' });
+      }
+    }
+};
 
 // //Read One
-// export const handleGetProjectById = async (req: Request, res: Response): Promise<void> => {
-//   try {
-//     const projectId = req.params.projectId;
+export const handleGetProjectById = async (req: Request, res: Response): Promise<Response> => {
+  const { projectId } = req.body;
 
-//     if (!mongoose.Types.ObjectId.isValid(projectId)) {
-//       res.status(400).json({ error: 'Invalid project ID' });
-//       return;
-//     }
+  try {
+    if (!mongoose.Types.ObjectId.isValid(projectId)) {
+      return res.status(400).json({ error: 'Invalid project ID' });
+    }
 
-//     const project = await projectModel.findById(projectId).exec();
+    const project = await ProjectModel.findById(projectId).exec();
 
-//     if (!project) {
-//       res.status(404).json({ error: 'Project not found' });
-//       return;
-//     }
+    if (!project) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
 
-//     res.json(project);
-//   } catch (error) {
-//       if (error instanceof mongoose.Error) {
-//         res.status(400).json({ error: error.message });
-//       } else {
-//         res.status(500).json({ error: 'Internal server error' });
-//       }
-//     }
-// };
+    return res.json(project);
+  } catch (error) {
+      if (error instanceof mongoose.Error) {
+        return res.status(400).json({ error: error.message });
+      } else {
+        return res.status(500).json({ error: 'Internal server error' });
+      }
+    }
+};
 
 // //Update
-// export const handleUpdateProjectById = async (req: Request, res: Response): Promise<void> => {
-//   try {
-//     const { projectId, premadeTemplateId } = req.params;
-//     const updateData = req.body;
+export const handleUpdateProjectById = async (req: Request, res: Response): Promise<Response> => {
+  const { projectId, projectName, category } = req.body;
 
-//     if (!mongoose.Types.ObjectId.isValid(projectId)) {
-//       res.status(400).json({ error: 'Invalid project ID' });
-//       return;
-//     }
+  try {
+    if (!mongoose.Types.ObjectId.isValid(projectId)) {
+      return res.status(400).json({ error: 'Invalid project ID' });
+    }
 
-//     const updatedProject = await projectModel.findByIdAndUpdate(projectId, updateData, { new: true }).exec();
+    const updatedProject = await ProjectModel.findByIdAndUpdate(
+      projectId,
+      { projectName: projectName, category: category },
+      { new: true }
+    ).exec();
 
-//     if (!updatedProject) {
-//       res.status(404).json({ error: 'Project not found' });
-//       return;
-//     }
+    if (!updatedProject) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
 
-//     res.json(updatedProject);
-//   } catch (error) {
-//       if (error instanceof mongoose.Error) {
-//         res.status(400).json({ error: error.message });
-//       } else {
-//         res.status(500).json({ error: 'Internal server error' });
-//       }
-//     }
-// };
-// export const handleSelectPremadeTemplate = async (req: Request, res: Response): Promise<void> => {
-//   try {
-//     const { projectId, premadeTemplateId } = req.params;
+    return res.json(updatedProject);
+  } catch (error) {
+      if (error instanceof mongoose.Error) {
+        return res.status(400).json({ error: error.message });
+      } else {
+        return  res.status(500).json({ error: 'Internal server error' });
+      }
+    }
+};
+export const handleSelectPremadeTemplate = async (req: Request, res: Response): Promise<Response> => {
+  const { projectId, premadeTemplateId } = req.body;
 
+  try {
+    if (!mongoose.Types.ObjectId.isValid(projectId)) {
+      return res.status(400).json({ error: 'Invalid project ID' });
+    }
+    if (!mongoose.Types.ObjectId.isValid(premadeTemplateId)) {
+      return res.status(400).json({ error: 'Invalid premade template ID' });
+    }
 
-//     if (!mongoose.Types.ObjectId.isValid(projectId)) {
-//       res.status(400).json({ error: 'Invalid project ID' });
-//       return;
-//     }
-//     if (!mongoose.Types.ObjectId.isValid(premadeTemplateId)) {
-//       res.status(400).json({ error: 'Invalid premade template ID' });
-//       return;
-//     }
+    const premadeTemplate = await PremadeTemplateModel.findById(premadeTemplateId);
 
-//     const premadeTemplate = await premadeTemplateModel.findById(premadeTemplateId);
+    if (!premadeTemplate) {
+      return res.status(404).json({ error: 'Premade template not found' });
+    }
 
-//     if (!premadeTemplate) {
-//       res.status(404).json({ error: 'Premade template not found' });
-//       return;
-//     }
+    const project =  await ProjectModel.findById(projectId).exec();
 
-//     const project =  await projectModel.findById(projectId).exec();
+    if (!project) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+    if(project.stage !== 'PROJECT_CREATED') {
+      return res.json({ message: 'A template is already selected for this project' });
+    }
 
-//     if (!project) {
-//       res.status(404).json({ error: 'Project not found' });
-//       return ;
-//     }
-//     if(project.stage !== 'PROJECT_CREATED') {
-//       res.json({ message: 'A template is already selected for this project' });
-//       return ;
-//     }
+    const updatedProject = await ProjectModel.findByIdAndUpdate(
+      projectId,
+      { templateId: premadeTemplateId, stage: 'TEMPLATE_SELECTED' },
+      { new: true }
+    ).exec();
 
-//     const updatedProject = await projectModel.findByIdAndUpdate(projectId, { templateId: premadeTemplateId , stage: 'TEMPLATE_SELECTED'}, { new: true }).exec();
+    return res.json(updatedProject);
+  } catch (error) {
+      if (error instanceof mongoose.Error) {
+        return res.status(400).json({ error: error.message });
+      } else {
+        return res.status(500).json({ error: 'Internal server error' });
+      }
+    }
+};
+export const handleRemovePremadeTemplate = async (req: Request, res: Response): Promise<Response> => {
+  const { projectId } = req.body;
 
-//     res.json(updatedProject);
-//   } catch (error) {
-//       if (error instanceof mongoose.Error) {
-//         res.status(400).json({ error: error.message });
-//       } else {
-//         res.status(500).json({ error: 'Internal server error' });
-//       }
-//     }
-// };
-// export const handleRemovePremadeTemplate = async (req: Request, res: Response): Promise<void> => {
-//   try {
-//     const { projectId, premadeTemplateId } = req.params;
+  try {
+    if (!mongoose.Types.ObjectId.isValid(projectId)) {
+      return res.status(400).json({ error: 'Invalid project ID' });
+    }
 
-//     if (!mongoose.Types.ObjectId.isValid(projectId)) {
-//       res.status(400).json({ error: 'Invalid project ID' });
-//       return;
-//     }
-//     if (!mongoose.Types.ObjectId.isValid(premadeTemplateId)) {
-//       res.status(400).json({ error: 'Invalid premade template ID' });
-//       return;
-//     }
+    const project =  await ProjectModel.findById(projectId).exec();
 
-//     const premadeTemplate = await premadeTemplateModel.findById(premadeTemplateId);
+    if (!project) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
 
-//     if (!premadeTemplate) {
-//       res.status(404).json({ error: 'Premade template not found' });
-//       return;
-//     }
+    const premadeTemplateId = project.templateId;
 
-//     const project =  await projectModel.findById(projectId).exec();
+    if(!premadeTemplateId) {
+      return res.json({ error: 'No template has been selected yet' });
+    }
+    if(project.stage === 'TEMPLATE_FINALISED' || project.stage === 'ISSUED') {
+      return res.json({ message: 'You cannot remove the template at this stage' });
+    }
 
-//     if (!project) {
-//       res.status(404).json({ error: 'Project not found' });
-//       return;
-//     }
-//     if(project.stage === 'PROJECT_CREATED') {
-//       res.json({ error: 'No template has been selected yet' });
-//       return ;
-//     }
-//     if(project.stage === 'TEMPLATE_SELECTED' && premadeTemplateId !== project.templateId.toString()) {
-//       res.json({ error: 'Template ID did not match'});
-//       return ;
-//     }
-//     if(project.stage === 'TEMPLATE_FINALISED' || project.stage === 'ISSUED') {
-//       res.json({ message: 'You cannot remove the template at this stage' });
-//       return ;
-//     }
+    const updatedProject = await ProjectModel.findByIdAndUpdate(
+      projectId,
+      { templateId: null , stage: 'PROJECT_CREATED' },
+      { new: true }
+    ).exec();
 
-//     const updatedProject = await projectModel.findByIdAndUpdate(projectId, { templateId: null , stage: 'PROJECT_CREATED'}, { new: true }).exec();
-
-//     res.json(updatedProject);
-//   } catch (error) {
-//       if (error instanceof mongoose.Error) {
-//         res.status(400).json({ error: error.message });
-//       } else {
-//         res.status(500).json({ error: 'Internal server error' });
-//       }
-//     }
-// };
+    return res.json(updatedProject);
+  } catch (error) {
+      if (error instanceof mongoose.Error) {
+        return res.status(400).json({ error: error.message });
+      } else {
+        return res.status(500).json({ error: 'Internal server error' });
+      }
+    }
+};
 
 // //Delete
-// export const handleDeleteProjectById = async (req: Request, res: Response): Promise<void> => {
-//   try {
-//     const projectId = req.params.projectId;
+export const handleDeleteProjectById = async (req: Request, res: Response): Promise<Response> => {
+  const { projectId } = req.body;
 
-//     if (!mongoose.Types.ObjectId.isValid(projectId)) {
-//       res.status(400).json({ error: 'Invalid project ID' });
-//       return;
-//     }
+  try {
+    if (!mongoose.Types.ObjectId.isValid(projectId)) {
+      return res.status(400).json({ error: 'Invalid project ID' });
+    }
 
-//     const project = await projectModel.findById(projectId);
+    const project = await ProjectModel.findById(projectId);
 
-//     if (!project) {
-//       res.status(404).json({ error: 'Project not found' });
-//       return;
-//     }
+    if (!project) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
 
-//     await modifiedTemplateModel.findByIdAndDelete(project.modifiedTemplateId);
+    await ModifiedTemplateModel.findByIdAndDelete(project.modifiedTemplateId);
 
-//     await recipientModel.deleteMany({ projectId: projectId });
+    await RecipientModel.deleteMany({ projectId: projectId });
 
-//     await certificationModel.deleteMany({ projectId: projectId });
+    await CertificationModel.deleteMany({ projectId: projectId });
 
-//     await issuerModel.findByIdAndUpdate(project.issuerId, { $pull: { createdProjects: projectId } }, { new: true }).exec();
+    await IssuerModel.findByIdAndUpdate(project.issuerId, { $pull: { createdProjects: projectId } }, { new: true }).exec();
 
-//     await projectModel.findByIdAndDelete(projectId).exec();
+    await ProjectModel.findByIdAndDelete(projectId).exec();
 
-//     res.json({ message: 'Project deleted successfully' });
-//   } catch (error) {
-//     if (error instanceof mongoose.Error) {
-//       res.status(400).json({ error: error.message });
-//     } else {
-//       res.status(500).json({ error: 'Internal server error' });
-//     }
-//   }
-// };
+    return res.status(200).json({ message: 'Project deleted successfully' });
+  } catch (error) {
+    if (error instanceof mongoose.Error) {
+      return res.status(400).json({ error: error.message });
+    } else {
+      return res.status(500).json({ error: 'Internal server error' });
+    }
+  }
+};

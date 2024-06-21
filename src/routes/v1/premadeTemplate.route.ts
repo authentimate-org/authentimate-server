@@ -1,22 +1,31 @@
-import express from 'express';
-const router = express.Router();
-import { handleCreateProject, handleGetAllProjectsByIssuerId, handleGetProjectById, handleUpdateProjectById, handleSelectPremadeTemplate, handleRemovePremadeTemplate, handleDeleteProjectById } from '../../controllers/project.controller'; 
-import { handleCreatePremadeTemplate, handleGetAllPremadeTemplates, handleGetPremadeTemplateById, handleDeletePremadeTemplateById } from '../../controllers/premadeTemplate.controller'; 
+import express from 'express'
+const router = express.Router()
+import { handleSelectPremadeTemplate, handleRemovePremadeTemplate } from '../../controllers/project.controller'
+import { handleCreatePremadeTemplate, handleGetAllPremadeTemplates, handleGetPremadeTemplateById, handleDeletePremadeTemplateById } from '../../controllers/premadeTemplate.controller'
+
 
 
 router
-.route('/')
-.get(handleGetAllPremadeTemplates)
+.route('/create')
 .post(handleCreatePremadeTemplate);
 
+router
+.route('/read')
+.get(handleGetAllPremadeTemplates)
+.post(handleGetPremadeTemplateById);
+
 // router
-// .route('/:id')
-// .get(handleGetPremadeTemplateById)
+// .route('/delete')
 // .delete(handleDeletePremadeTemplateById);
 
 router
-.route('/:projectId/:premadeTemplateId')
-.get(handleSelectPremadeTemplate)
+.route('/select')
+.post(handleSelectPremadeTemplate);
+
+router
+.route('/remove')
 .post(handleRemovePremadeTemplate);
+
+
 
 export default router

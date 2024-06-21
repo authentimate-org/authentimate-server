@@ -1,19 +1,20 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
-interface recipient extends Document{
+interface Recipient extends Document{
     recipientName: string;
     email: string,
     achievedCertifications: mongoose.Schema.Types.ObjectId[];
 }
 
-const recipientSchema = new Schema<recipient>({
+const recipientSchema = new Schema<Recipient>({
     recipientName: {
         type: String,
         required: true
     },
     email: {
         type: String,
-        required: true
+        required: true,
+        unique: true
     },
     achievedCertifications: [{
         type: mongoose.Schema.Types.ObjectId,
@@ -22,6 +23,6 @@ const recipientSchema = new Schema<recipient>({
 {timestamps: true}
 );
 
-const recipientModel = mongoose.model<recipient>('recipient', recipientSchema);
+const RecipientModel = mongoose.model<Recipient>('recipient', recipientSchema);
 
-export { recipientModel, recipient };
+export { RecipientModel, Recipient };
