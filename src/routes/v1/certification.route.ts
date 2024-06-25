@@ -1,6 +1,6 @@
 import express from 'express'
 const router = express.Router()
-import { handleCreateCertification, handleGetCertificationById } from '../../controllers/certification.controller'
+import { handleCreateCertification, handleGetAllCertificationsByProjectId, handleGetCertificationById } from '../../controllers/certification.controller'
 
 
 
@@ -9,7 +9,11 @@ router
 .post(handleCreateCertification);
 
 router
-.route('/read')
+.route('/all')
+.post(handleGetAllCertificationsByProjectId);
+
+router
+.route('/')
 .post(handleGetCertificationById);
 
 

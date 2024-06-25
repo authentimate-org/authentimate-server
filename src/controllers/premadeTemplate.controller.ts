@@ -31,7 +31,7 @@ export const handleCreatePremadeTemplate = async (req: Request, res: Response): 
 //Read All
 export const handleGetAllPremadeTemplates = async (req: Request, res: Response): Promise<Response> => {
   try {
-    const allPremadeTemplates = await PremadeTemplateModel.find({});
+    const allPremadeTemplates = await PremadeTemplateModel.find({}, '_id templateImageURL').exec();
 
     if (!allPremadeTemplates) {
       return res.status(404).json({ error: 'Premade templates not found' });
@@ -53,7 +53,7 @@ export const handleGetPremadeTemplateById = async (req: Request, res: Response):
 
   try {
     if (!mongoose.Types.ObjectId.isValid(premadeTemplateId)) {
-      return res.status(400).json({ error: 'Invalid pemade template ID' });
+      return res.status(400).json({ error: 'Invalid premade template ID' });
     }
 
     const premadeTemplate = await PremadeTemplateModel.findById(premadeTemplateId);

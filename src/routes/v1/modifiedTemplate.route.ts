@@ -1,6 +1,6 @@
 import express from 'express';
 const router = express.Router();
-import { handleCreateModifiedTemplate, handleGetModifiedTemplateById, handleUpdateModifiedTemplateById, handleDeleteModifiedTemplateById } from '../../controllers/modifiedTemplate.controller'; 
+import { handleCreateModifiedTemplate, handleGetAllModifiedTemplatesByIssuerId, handleGetModifiedTemplateById, handleUpdateModifiedTemplateById, handleDeleteModifiedTemplateById } from '../../controllers/modifiedTemplate.controller'; 
 
 
 
@@ -9,7 +9,11 @@ router
 .post(handleCreateModifiedTemplate);
 
 router
-.route('/read')
+.route('/all')
+.get(handleGetAllModifiedTemplatesByIssuerId);
+
+router
+.route('/')
 .post(handleGetModifiedTemplateById);
 
 router

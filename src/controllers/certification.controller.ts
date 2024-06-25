@@ -70,6 +70,41 @@ export const handleCreateCertification = async (req: Request, res: Response): Pr
     }
 };
 
+//Read All
+export const handleGetAllCertificationsByProjectId = async (req: Request, res: Response): Promise<Response> => {
+  const { projectId } = req.body;
+
+  try {
+    if (!mongoose.Types.ObjectId.isValid(projectId)) {
+      return res.status(400).json({ error: 'Invalid project ID' });
+    }
+
+    const project = await ProjectModel.findById(projectId).exec();
+
+    if (!project) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    if (project.issuerId.toString() !== req.issuerId) {
+      return res.json({ error: 'Issuer not matched' });
+    }
+  
+    const allCertifications = await CertificationModel.find({projectId: projectId}).exec();
+  
+    if (!allCertifications) {
+      return res.status(404).json({ error: 'Certificates not found' });
+    }
+  
+    return res.json(allCertifications);
+  } catch (error) {
+      if (error instanceof mongoose.Error) {
+        return res.status(400).json({ error: error.message });
+      } else {
+        return res.status(500).json({ error: 'Internal server error' });
+      }
+    }
+};
+
 //Read One
 export const handleGetCertificationById = async (req: Request, res: Response): Promise<Response> => {
   const { certificationId } = req.body;

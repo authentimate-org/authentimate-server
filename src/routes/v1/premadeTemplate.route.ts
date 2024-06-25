@@ -1,6 +1,6 @@
 import express from 'express'
 const router = express.Router()
-import { handleSelectPremadeTemplate, handleRemovePremadeTemplate } from '../../controllers/project.controller'
+import { handleSelectPremadeTemplate } from '../../controllers/project.controller'
 import { handleCreatePremadeTemplate, handleGetAllPremadeTemplates, handleGetPremadeTemplateById, handleDeletePremadeTemplateById } from '../../controllers/premadeTemplate.controller'
 
 
@@ -10,8 +10,11 @@ router
 .post(handleCreatePremadeTemplate);
 
 router
-.route('/read')
-.get(handleGetAllPremadeTemplates)
+.route('/all')
+.get(handleGetAllPremadeTemplates);
+
+router
+.route('/')
 .post(handleGetPremadeTemplateById);
 
 // router
@@ -19,12 +22,12 @@ router
 // .delete(handleDeletePremadeTemplateById);
 
 router
-.route('/select')
+.route('/add-to-project')
 .post(handleSelectPremadeTemplate);
 
-router
-.route('/remove')
-.post(handleRemovePremadeTemplate);
+// router
+// .route('/remove')
+// .post(handleRemovePremadeTemplate);
 
 
 
