@@ -13,8 +13,12 @@ router
 .post(handleGetAllCertificationsByProjectId);
 
 router
-.route('/')
-.post(handleGetCertificationById);
+.route('/:certificationId')
+.get(handleGetCertificationById);
+
+// router
+// .route('/')
+// .post(handleGetCertificationById);
 
 
 

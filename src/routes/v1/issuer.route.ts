@@ -2,7 +2,7 @@ import express from "express"
 const router = express.Router()
 import authMiddleware from "../../middleware/auth.middleware"
 import emailValidatorMiddleware from '../../middleware/emailValidator.middleware'
-import { handleCreateIssuer, handleGetIssuerById, handleUpdateIssuerById, handleDeleteIssuerById } from "../../controllers/issuer.controller"
+import { handleCreateIssuer, handleGetIssuerById, handleUpdateIssuerById, handleCkeckOnboardingStatus, handleDoOnboarding, handleDeleteIssuerById } from "../../controllers/issuer.controller"
 
 
 
@@ -11,16 +11,21 @@ router
 .post(emailValidatorMiddleware, handleCreateIssuer);
 
 router
-.route('/read')
-.get(authMiddleware, handleGetIssuerById);
+.route('/')
+.get(handleGetIssuerById);
 
 router
 .route('/update')
-.put(authMiddleware, handleUpdateIssuerById);
+.put(handleUpdateIssuerById);
 
-// router
-// .route('/delete')
-// .delete(authMiddleware, handleDeleteIssuerById);
+router
+.route('/onboarding')
+.get(handleCkeckOnboardingStatus)
+.put(handleDoOnboarding);
+
+router
+.route('/delete')
+.delete(authMiddleware, handleDeleteIssuerById);
 
 
 

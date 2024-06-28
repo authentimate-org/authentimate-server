@@ -1,5 +1,8 @@
 import { Request, Response } from 'express';
 import mongoose from 'mongoose';
+import QRCode from 'qrcode';
+import path from 'path';
+import { IssuerModel } from '../models/issuer.model'
 import { ProjectModel } from '../models/project.model';
 import { RecipientModel } from '../models/recipient.model';
 import { CertificationModel, Certification } from '../models/certification.model';
@@ -20,9 +23,9 @@ export const handleCreateCertification = async (req: Request, res: Response): Pr
       return res.status(404).json({ error: 'Project not found' });
     }
 
-    if (project.issuerId.toString() !== req.issuerId) {
-      return res.json({ error: 'Issuer not matched' });
-    }
+    // if (project.issuerId.toString() !== req.issuerId) {
+    //   return res.json({ error: 'Issuer not matched' });
+    // }
 
     for(const value of recipients){
       let recipientId, imageURL;
@@ -58,6 +61,12 @@ export const handleCreateCertification = async (req: Request, res: Response): Pr
         { $push: { issuedCertificates: createdCertification._id }, stage: 'ISSUED' },
         { new: true }
       ).exec();
+
+      const certificateUrl = `http://192.168.1.2:5000/api/v1/certificate/${createdCertification._id}`;
+
+      const qrCodeFilePath = path.join(__dirname, `../public/qrcodes/${createdCertification._id}.png`);
+      await QRCode.toFile(qrCodeFilePath, certificateUrl);
+
     }
 
     return res.status(201).json({ message: "All certificates are created successfully"});
@@ -107,7 +116,7 @@ export const handleGetAllCertificationsByProjectId = async (req: Request, res: R
 
 //Read One
 export const handleGetCertificationById = async (req: Request, res: Response): Promise<Response> => {
-  const { certificationId } = req.body;
+  const { certificationId } = req.params;
 
   try {
     if (!mongoose.Types.ObjectId.isValid(certificationId)) {
@@ -119,8 +128,18 @@ export const handleGetCertificationById = async (req: Request, res: Response): P
     if (!certification) {
       return res.status(404).json({ error: 'Certification not found' });
     }
+
+    const issuer = await IssuerModel.findById(certification.issuerId).exec();
     
-    return res.status(200).json(certification);
+    const project = await ProjectModel.findById(certification.projectId).exec();
+
+    const recipient = await RecipientModel.findById(certification.recipientId).exec();
+    
+    return res.status(200).json({
+      "Issued By": issuer?.issuerName,
+      "Project": project?.projectName,
+      "To": recipient?.recipientName
+    });
   } catch (error) {
       if (error instanceof mongoose.Error) {
         return res.status(400).json({ error: error.message });

@@ -11,7 +11,7 @@ declare global {
   namespace Express {
     interface Request {
       user?: DecodedIdToken;
-      issuerId?: string; // Add issuerId to the Request interface
+      issuerId?: string;
     }
   }
 }
@@ -32,8 +32,6 @@ async function authMiddleware(req: Request, res: Response, next: NextFunction) {
   if (!authorizationHeader) {
     return res.status(401).send('Unauthorized (no authorization header)');
   }
-  // console.log('Authorization Header:', authorizationHeader);
-
 
   const idToken = authorizationHeader.split(' ')[1];
 
@@ -45,14 +43,19 @@ async function authMiddleware(req: Request, res: Response, next: NextFunction) {
     const decodedToken = await verifyToken(idToken);
     req.user = decodedToken;
 
-    // Fetch the issuer from the database
+    console.log(req.user);
+
+    if (!req.user.email_verified) {
+      return res.status(401).send('Unauthorized (email not verified)');
+    }
+
     const issuer = await IssuerModel.findOne({ firebaseUid: decodedToken.uid }).exec() as Issuer;
 
     if (!issuer) {
       return res.status(401).send('Unauthorized (issuer not found)');
     }
 
-    req.issuerId = issuer._id.toString(); // Add the issuerId to the request
+    req.issuerId = issuer._id.toString();
     next();
   } catch (error) {
     console.error('Error in authMiddleware:', error);

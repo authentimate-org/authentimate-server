@@ -18,7 +18,7 @@ export const handleCreateProject = async (req: Request, res: Response): Promise<
 
     const project = await ProjectModel.find({ issuerId: req.issuerId, projectName: projectName, category: category }).exec();
 
-    if (project) {
+    if (project.length !== 0) {
       return res.json({ error: 'A project with this name already exists in this category'});
     }
 
@@ -111,7 +111,7 @@ export const handleUpdateProjectById = async (req: Request, res: Response): Prom
 
     const Project = await ProjectModel.find({ issuerId: req.issuerId, projectName: projectName, category: category }).exec();
 
-    if (Project) {
+    if (Project.length !== 0) {
       return res.json({ error: 'A project with this name already exists in this category'});
     }
 
@@ -171,7 +171,7 @@ export const handleSelectPremadeTemplate = async (req: Request, res: Response): 
     }
 
     if (project.issuerId.toString() != req.issuerId) {
-      return res.status(401).json({ error: 'Unauthorized (issuer not matched)' });
+      return res.status(401).json({ error: 'Unauthorised (issuer not matched)' });
     }
 
     // if(project.stage !== 'PROJECT_CREATED') {

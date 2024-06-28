@@ -1,22 +1,24 @@
 import { Request, Response } from 'express'
-import { IssuerModel, Issuer } from '../models/issuer.model'
 import mongoose from 'mongoose'
+import admin from 'firebase-admin';
+import { IssuerModel, Issuer } from '../models/issuer.model'
 
+
+//create
 export const handleCreateIssuer = async (req: Request, res: Response): Promise<Response> => {
   try {
-    const { issuerName, email, uid } = req.body;
+    if (!req.user) {
+      return res.status(401).json({ error: 'Unauthorized (user not found)' });
+    }
+
+    if (req.issuerId) {
+      return res.status(401).json({ error: 'Issuer already exists' });
+    }
 
     const newIssuer: Issuer = new IssuerModel({
-      issuerName: issuerName,
-      businessMail: email,
-      firebaseUid: uid
+      businessMail: req.user.email,
+      firebaseUid: req.user.uid
     });
-
-    const issuer = await IssuerModel.findOne({businessMail: email}).exec();
-
-    if(issuer) {
-      return res.json({ message: 'This email is already exist.Please sign in' });
-    }
 
     const createdIssuer = await newIssuer.save();
     return res.status(201).json(createdIssuer);
@@ -71,7 +73,82 @@ export const handleUpdateIssuerById = async (req: Request, res: Response): Promi
 
     const updatedIssuer = await IssuerModel.findByIdAndUpdate(
       req.issuerId,
-      { issuerName: req.body.issuerName },
+      { 
+        issuerName: issuerName
+      },
+      { new: true }
+    ).exec();
+
+    if (!updatedIssuer) {
+      return res.status(404).json({ error: 'Issuer not found' });
+    }
+
+    return res.json(updatedIssuer);
+  } catch (error) {
+      if (error instanceof mongoose.Error) {
+        return res.status(400).json({ error: error.message });
+      } else {
+        return res.status(500).json({ error: 'Internal server error' });
+      }
+    }
+};
+
+//Check Onboarding Status
+export const handleCkeckOnboardingStatus = async (req: Request, res: Response): Promise<Response> => {
+  try {
+    if (!req.user || !req.issuerId) {
+      return res.status(401).json({ error: 'Unauthorized (user not found)' });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(req.issuerId)) {
+      return res.status(400).json({ error: 'Invalid Issuer ID' });
+    }
+
+    const issuer = await IssuerModel.findById(req.issuerId).exec();
+
+    if (!issuer) {
+      return res.status(404).json({ error: 'Issuer not found' });
+    }
+
+    return res.json({ status: issuer.onboarding });
+  } catch (error) {
+      if (error instanceof mongoose.Error) {
+        return res.status(400).json({ error: error.message });
+      } else {
+        return res.status(500).json({ error: 'Internal server error' });
+      }
+    }
+};
+
+//Onboarding
+export const handleDoOnboarding = async (req: Request, res: Response): Promise<Response> => {
+  const { category, companyName, CIN, instituteName, issuerName, designation, address } = req.body;
+
+  try {
+    if (!req.user || !req.issuerId) {
+      return res.status(401).json({ error: 'Unauthorized (user not found)' });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(req.issuerId)) {
+      return res.status(400).json({ error: 'Invalid Issuer ID' });
+    }
+
+    if (!(category && ((companyName && CIN) ^ instituteName ^ issuerName) && designation && address)) {
+      return res.send('All fields are required');
+    }
+
+    const updatedIssuer = await IssuerModel.findByIdAndUpdate(
+      req.issuerId,
+      { 
+        onboarding: true,
+        category: category,
+        companyName: companyName,
+        CIN: CIN,
+        instituteName: instituteName,
+        issuerName: issuerName,
+        designation: designation,
+        address: address
+      },
       { new: true }
     ).exec();
 
@@ -105,6 +182,8 @@ export const handleDeleteIssuerById = async (req: Request, res: Response): Promi
     if (!deletedIssuer) {
       return res.status(404).json({ error: 'Issuer not found' });
     }
+
+    await admin.auth().deleteUser(req.user.uid);
 
     return res.json({ message: 'Issuer deleted successfully' });
   } catch (error) {
