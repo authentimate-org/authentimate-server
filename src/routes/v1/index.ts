@@ -11,13 +11,13 @@ import certificationRoutes from "./certification.route"
 
 router.use('/issuer', issuerRoutes);
 
-router.use('/project', projectRoutes);
+router.use('/project', authMiddleware, projectRoutes);
 
-router.use('/premadeTemplate', premadeTemplateRoutes);
+router.use('/premadeTemplate', authMiddleware, premadeTemplateRoutes);
 
-router.use('/modifiedTemplate', modifiedTemplateRoutes);
+router.use('/modifiedTemplate', authMiddleware, modifiedTemplateRoutes);
 
-router.use('/certificate', certificationRoutes);
+router.use('/certificate', authMiddleware, certificationRoutes);
 
 
 

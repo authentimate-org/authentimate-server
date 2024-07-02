@@ -5,7 +5,6 @@ import helmet from 'helmet';
 import cors from 'cors';
 import connectDB from './config/db';
 import v1Routes from './routes/v1/index';
-import authMiddleware from './middleware/auth.middleware';
 import errorHandlerMiddleware from './middleware/errorHandler.middleware';
 import notFoundMiddleware from './middleware/notFound.middleware';
 
@@ -27,7 +26,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 
-app.use('/api/v1', authMiddleware,  v1Routes);
+app.use('/api/v1', v1Routes);
 
 app.use(notFoundMiddleware);
 app.use(errorHandlerMiddleware);

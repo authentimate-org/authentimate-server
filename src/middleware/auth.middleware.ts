@@ -16,7 +16,7 @@ declare global {
   }
 }
 
-async function verifyToken(idToken: string): Promise<DecodedIdToken> {
+export async function verifyToken(idToken: string): Promise<DecodedIdToken> {
   try {
     const decodedToken = await admin.auth().verifyIdToken(idToken);
     return decodedToken;

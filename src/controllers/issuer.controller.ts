@@ -1,29 +1,84 @@
 import { Request, Response } from 'express'
 import mongoose from 'mongoose'
-import admin from 'firebase-admin';
+import admin from '../config/firebase-admin';
 import { IssuerModel, Issuer } from '../models/issuer.model'
 
+//SignIn
+async function signInWithCustomToken(customToken: string): Promise<string> {
+  const response = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key=${process.env.VITE_FIREBASE_API_KEY}`, {
+      method: 'POST',
+      headers: {
+          'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+          token: customToken,
+          returnSecureToken: true,
+      }),
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+      throw new Error(data.error.message);
+  }
+
+  return data.idToken;
+}
 
 //create
 export const handleCreateIssuer = async (req: Request, res: Response): Promise<Response> => {
+  const { email, password } = req.body;
+
   try {
-    if (!req.user) {
-      return res.status(401).json({ error: 'Unauthorized (user not found)' });
+    if (!password) {
+      return res.status(400).json({ error: 'Password is required' });
     }
 
-    if (req.issuerId) {
-      return res.status(401).json({ error: 'Issuer already exists' });
+    const user = await admin.auth().createUser({
+      email: email,
+      password: password,
+    });
+    
+    if (!user) {
+      return res.status(400).json({ error: "Couldn't create user on fireabse." })
     }
+    // console.log(user);
 
+    const customToken = await admin.auth().createCustomToken(user.uid);
+    const idToken = await signInWithCustomToken(customToken);
+
+    if (!customToken || !idToken) {
+      await admin.auth().deleteUser(user.uid);
+      return res.json({ error: "Couldn't create token." });
+    }
+ 
     const newIssuer: Issuer = new IssuerModel({
-      businessMail: req.user.email,
-      firebaseUid: req.user.uid
+      businessMail: email,
+      firebaseUid: user.uid
     });
 
     const createdIssuer = await newIssuer.save();
-    return res.status(201).json(createdIssuer);
-  } catch (error) {
-      if (error instanceof mongoose.Error) {
+
+    if (!createdIssuer) {
+      await admin.auth().deleteUser(user.uid);
+      return res.json({ error: "Couldn't create user on MongoDB." });
+    }
+
+    return res.status(201).json({ _id: createdIssuer._id, idToken: idToken });
+  } catch (error: any) {
+      if (error.code) {
+        switch (error.code) {
+          case 'auth/email-already-exists':
+            return res.status(400).json({ error: 'The email address is already in use by another account.' });
+          case 'auth/invalid-email':
+            return res.status(400).json({ error: 'The email address is not valid.' });
+          case 'auth/invalid-password':
+            return res.status(400).json({ error: 'The password is not strong enough.' });
+          case 'auth/operation-not-allowed':
+            return res.status(400).json({ error: 'Operation not allowed. Please enable the email/password sign-in method in the Firebase Console.' });
+          default:
+            return res.status(500).json({ error: 'Internal server error (firebase error)' });
+        }
+      } else if (error instanceof mongoose.Error) {
         return res.status(400).json({ error: error.message });
       } else {
         return res.status(500).json({ error: 'Internal server error' });
@@ -94,7 +149,7 @@ export const handleUpdateIssuerById = async (req: Request, res: Response): Promi
 };
 
 //Check Onboarding Status
-export const handleCkeckOnboardingStatus = async (req: Request, res: Response): Promise<Response> => {
+export const handleCheckOnboardingStatus = async (req: Request, res: Response): Promise<Response> => {
   try {
     if (!req.user || !req.issuerId) {
       return res.status(401).json({ error: 'Unauthorized (user not found)' });
