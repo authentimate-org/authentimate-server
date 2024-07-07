@@ -83,6 +83,8 @@ const issuerSchema = new Schema<Issuer>({
 { timestamps: true }
 );
 
+issuerSchema.index({ firebaseUid: 1 }, { unique: true });
+
 const IssuerModel = mongoose.model<Issuer>('Issuer', issuerSchema);
 
 export { IssuerModel, Issuer };

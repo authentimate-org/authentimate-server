@@ -29,6 +29,13 @@ export const handleCreateProject = async (req: Request, res: Response): Promise<
     });
 
     const createdProject = await newProject.save();
+
+    await IssuerModel.findByIdAndUpdate(
+      req.issuerId,
+      { $push: { createdProjects: createdProject._id } },
+      { new: true }
+    ).exec();
+
     return res.status(201).json({ createdProject });
   } catch (error) {
     console.error('Error in handleCreateProject:', error);

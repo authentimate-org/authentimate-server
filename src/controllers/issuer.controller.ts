@@ -1,14 +1,18 @@
 import { Request, Response } from 'express'
 import mongoose from 'mongoose'
 import admin from '../config/firebase-admin';
+import firebaseApp from '../config/firebase-client';
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification, User as FirebaseUser } from 'firebase/auth';
 import { IssuerModel, Issuer } from '../models/issuer.model'
 
-//SignIn
+
+const auth = getAuth(firebaseApp);
+
 async function signInWithCustomToken(customToken: string): Promise<string> {
   const response = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key=${process.env.VITE_FIREBASE_API_KEY}`, {
       method: 'POST',
       headers: {
-          'Content-Type': 'application/json',
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({
           token: customToken,
@@ -24,8 +28,8 @@ async function signInWithCustomToken(customToken: string): Promise<string> {
   return data.idToken;
 }
 
-//create
-export const handleCreateIssuer = async (req: Request, res: Response): Promise<Response> => {
+//SignUp
+export const handleSignUp = async (req: Request, res: Response): Promise<Response> => {
   const { email, password } = req.body;
 
   try {
@@ -33,15 +37,22 @@ export const handleCreateIssuer = async (req: Request, res: Response): Promise<R
       return res.status(400).json({ error: 'Password is required' });
     }
 
-    const user = await admin.auth().createUser({
-      email: email,
-      password: password,
-    });
+    // const user = await admin.auth().createUser({
+    //   email: email,
+    //   password: password,
+    // });
+
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    const user = userCredential.user as FirebaseUser;
+
+    // const user = await admin.auth().getUser(user.uid);
     
     if (!user) {
       return res.status(400).json({ error: "Couldn't create user on fireabse." })
     }
-    // console.log(user);
+    console.log(userCredential);
+    console.log("-------------------------------------------");
+    console.log(user);
 
     const customToken = await admin.auth().createCustomToken(user.uid);
     const idToken = await signInWithCustomToken(customToken);
@@ -60,10 +71,18 @@ export const handleCreateIssuer = async (req: Request, res: Response): Promise<R
 
     if (!createdIssuer) {
       await admin.auth().deleteUser(user.uid);
-      return res.json({ error: "Couldn't create user on MongoDB." });
+      return res.json({ error: "Couldn't create issuer on MongoDB." });
     }
 
-    return res.status(201).json({ _id: createdIssuer._id, idToken: idToken });
+    await sendEmailVerification(user);
+
+    // const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+
+    // console.log(userCredential);
+
+    // await sendEmailVerification(userCredential.user);
+
+    return res.status(201).json({ msg: "Sign-up successful. Verification email sent.", token: idToken });
   } catch (error: any) {
       if (error.code) {
         switch (error.code) {
@@ -76,8 +95,32 @@ export const handleCreateIssuer = async (req: Request, res: Response): Promise<R
           case 'auth/operation-not-allowed':
             return res.status(400).json({ error: 'Operation not allowed. Please enable the email/password sign-in method in the Firebase Console.' });
           default:
-            return res.status(500).json({ error: 'Internal server error (firebase error)' });
+            return res.status(500).json({ error: 'Internal server error (firebase error)', errorCode: error.code });
         }
+      } else if (error instanceof mongoose.Error) {
+        return res.status(400).json({ error: error.message });
+      } else {
+        return res.status(500).json({ error: 'Internal server error' });
+      }
+    }
+};
+
+//SignIn
+export const handleSignIn = async (req: Request, res: Response): Promise<Response> => {
+  const { email, password } = req.body;
+
+  try{
+    if (!password) {
+      return res.status(400).json({ error: 'Password is required' });
+    }
+
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    const token = await userCredential.user?.getIdToken();
+
+    return res.status(200).json({ token });
+  } catch (error: any) {
+      if (error.code) {
+        return res.status(400).json({error: error.code});
       } else if (error instanceof mongoose.Error) {
         return res.status(400).json({ error: error.message });
       } else {

@@ -24,6 +24,3 @@ dist-ssr
 *.sw?
 .env
 .json
-
-public/
-config/authentimate-ad429-firebase-adminsdk-ixvpj-2c21a6f20b.json

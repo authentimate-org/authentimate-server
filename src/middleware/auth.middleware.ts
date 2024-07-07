@@ -43,9 +43,11 @@ async function authMiddleware(req: Request, res: Response, next: NextFunction) {
     const decodedToken = await verifyToken(idToken);
     req.user = decodedToken;
 
-    console.log(req.user);
+    const userRecord = await admin.auth().getUser(req.user.uid);
 
-    if (!req.user.email_verified) {
+    // console.log(req.user);
+
+    if (!userRecord.emailVerified) {
       return res.status(401).send('Unauthorized (email not verified)');
     }
 
