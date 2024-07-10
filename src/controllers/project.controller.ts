@@ -62,12 +62,12 @@ export const handleGetAllProjectsByIssuerId = async (req: Request, res: Response
   
     return res.json(allProjects);
   } catch (error) {
-      if (error instanceof mongoose.Error) {
-        return res.status(400).json({ error: error.message });
-      } else {
-        return res.status(500).json({ error: 'Internal server error' });
-      }
+    if (error instanceof mongoose.Error) {
+      return res.status(400).json({ error: error.message });
+    } else {
+      return res.status(500).json({ error: 'Internal server error' });
     }
+  }
 };
 
 //Read One
@@ -95,12 +95,12 @@ export const handleGetProjectById = async (req: Request, res: Response): Promise
 
     return res.json(project);
   } catch (error) {
-      if (error instanceof mongoose.Error) {
-        return res.status(400).json({ error: error.message });
-      } else {
-        return res.status(500).json({ error: 'Internal server error' });
-      }
+    if (error instanceof mongoose.Error) {
+      return res.status(400).json({ error: error.message });
+    } else {
+      return res.status(500).json({ error: 'Internal server error' });
     }
+  }
 };
 
 //Update
@@ -140,12 +140,12 @@ export const handleUpdateProjectById = async (req: Request, res: Response): Prom
 
     return res.json(updatedProject);
   } catch (error) {
-      if (error instanceof mongoose.Error) {
-        return res.status(400).json({ error: error.message });
-      } else {
-        return  res.status(500).json({ error: 'Internal server error' });
-      }
+    if (error instanceof mongoose.Error) {
+      return res.status(400).json({ error: error.message });
+    } else {
+      return res.status(500).json({ error: 'Internal server error' });
     }
+  }
 };
 
 //Select Template
@@ -193,12 +193,12 @@ export const handleSelectPremadeTemplate = async (req: Request, res: Response): 
 
     return res.json(updatedProject);
   } catch (error) {
-      if (error instanceof mongoose.Error) {
-        return res.status(400).json({ error: error.message });
-      } else {
-        return res.status(500).json({ error: 'Internal server error' });
-      }
+    if (error instanceof mongoose.Error) {
+      return res.status(400).json({ error: error.message });
+    } else {
+      return res.status(500).json({ error: 'Internal server error' });
     }
+  }
 };
 
 //Delete

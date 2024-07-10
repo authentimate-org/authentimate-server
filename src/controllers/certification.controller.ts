@@ -71,12 +71,12 @@ export const handleCreateCertification = async (req: Request, res: Response): Pr
 
     return res.status(201).json({ message: "All certificates are created successfully"});
   } catch (error) {
-      if (error instanceof mongoose.Error) {
-        return res.status(400).json({ error: error.message });
-      } else {
-        return res.status(500).json({ error: 'Internal server error' });
-      }
+    if (error instanceof mongoose.Error) {
+      return res.status(400).json({ error: error.message });
+    } else {
+      return res.status(500).json({ error: 'Internal server error' });
     }
+  }
 };
 
 //Read All
@@ -106,12 +106,12 @@ export const handleGetAllCertificationsByProjectId = async (req: Request, res: R
   
     return res.json(allCertifications);
   } catch (error) {
-      if (error instanceof mongoose.Error) {
-        return res.status(400).json({ error: error.message });
-      } else {
-        return res.status(500).json({ error: 'Internal server error' });
-      }
+    if (error instanceof mongoose.Error) {
+      return res.status(400).json({ error: error.message });
+    } else {
+      return res.status(500).json({ error: 'Internal server error' });
     }
+  }
 };
 
 //Read One
@@ -141,12 +141,12 @@ export const handleGetCertificationById = async (req: Request, res: Response): P
       "To": recipient?.recipientName
     });
   } catch (error) {
-      if (error instanceof mongoose.Error) {
-        return res.status(400).json({ error: error.message });
-      } else {
-        return res.status(500).json({ error: 'Internal server error' });
-      }
+    if (error instanceof mongoose.Error) {
+      return res.status(400).json({ error: error.message });
+    } else {
+      return res.status(500).json({ error: 'Internal server error' });
     }
+  }
 };
 
 //Update

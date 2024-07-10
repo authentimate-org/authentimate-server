@@ -29,16 +29,15 @@ export const handleCreateRecipient = async ( req: Request, res: Response, certif
     ).exec();
 
     return true;
-  } 
-  catch (error) {
-      if (error instanceof mongoose.Error) {
-        res.status(400).json({ error: error.message });
-        return false;
-      } else {
-        res.status(500).json({ error: 'Internal server error' });
-        return false;
-      }
+  } catch (error) {
+    if (error instanceof mongoose.Error) {
+      res.status(400).json({ error: error.message });
+      return false;
+    } else {
+      res.status(500).json({ error: 'Internal server error' });
+      return false;
     }
+  }
 };
 
 //Read
@@ -58,12 +57,12 @@ export const handleGetRecipientById = async (req: Request, res: Response): Promi
 
     return res.json(recipient);
   } catch (error) {
-      if (error instanceof mongoose.Error) {
-        return res.status(400).json({ error: error.message });
-      } else {
-        return res.status(500).json({ error: 'Internal server error' });
-      }
+    if (error instanceof mongoose.Error) {
+      return res.status(400).json({ error: error.message });
+    } else {
+      return res.status(500).json({ error: 'Internal server error' });
     }
+  }
 };
 
 //Update

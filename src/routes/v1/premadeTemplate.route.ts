@@ -1,8 +1,12 @@
 import express from 'express'
+import multer from 'multer';
 const router = express.Router()
 import { handleSelectPremadeTemplate } from '../../controllers/project.controller'
 import { handleCreatePremadeTemplate, handleGetAllPremadeTemplates, handleGetPremadeTemplateById, handleDeletePremadeTemplateById } from '../../controllers/premadeTemplate.controller'
 
+
+// const storage = multer.memoryStorage();
+// const upload = multer({ storage });
 
 
 router

@@ -82,27 +82,27 @@ export const handleSignUp = async (req: Request, res: Response): Promise<Respons
 
     // await sendEmailVerification(userCredential.user);
 
-    return res.status(201).json({ msg: "Sign-up successful. Verification email sent.", token: idToken });
+    return res.status(201).json({ messsage: "Sign-up successful. Verification email sent.", token: idToken });
   } catch (error: any) {
-      if (error.code) {
-        switch (error.code) {
-          case 'auth/email-already-exists':
-            return res.status(400).json({ error: 'The email address is already in use by another account.' });
-          case 'auth/invalid-email':
-            return res.status(400).json({ error: 'The email address is not valid.' });
-          case 'auth/invalid-password':
-            return res.status(400).json({ error: 'The password is not strong enough.' });
-          case 'auth/operation-not-allowed':
-            return res.status(400).json({ error: 'Operation not allowed. Please enable the email/password sign-in method in the Firebase Console.' });
-          default:
-            return res.status(500).json({ error: 'Internal server error (firebase error)', errorCode: error.code });
-        }
-      } else if (error instanceof mongoose.Error) {
-        return res.status(400).json({ error: error.message });
-      } else {
-        return res.status(500).json({ error: 'Internal server error' });
+    if (error.code) {
+      switch (error.code) {
+        case 'auth/email-already-exists':
+          return res.status(400).json({ error: 'The email address is already in use by another account.' });
+        case 'auth/invalid-email':
+          return res.status(400).json({ error: 'The email address is not valid.' });
+        case 'auth/invalid-password':
+          return res.status(400).json({ error: 'The password is not strong enough.' });
+        case 'auth/operation-not-allowed':
+          return res.status(400).json({ error: 'Operation not allowed. Please enable the email/password sign-in method in the Firebase Console.' });
+        default:
+          return res.status(500).json({ error: 'Internal server error (firebase error)', errorCode: error.code });
       }
+    } else if (error instanceof mongoose.Error) {
+      return res.status(400).json({ error: error.message });
+    } else {
+      return res.status(500).json({ error: 'Internal server error' });
     }
+  }
 };
 
 //SignIn
@@ -114,19 +114,34 @@ export const handleSignIn = async (req: Request, res: Response): Promise<Respons
       return res.status(400).json({ error: 'Password is required' });
     }
 
+    const issuer = await IssuerModel.findOne({ businessMail: email }).exec();
+
+    if(!issuer) {
+      return res.status(400).json({ error: 'Issuer not found.' });
+    }
+
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
     const token = await userCredential.user?.getIdToken();
 
-    return res.status(200).json({ token });
+    let message_1, message_2;
+
+    if(!userCredential.user.emailVerified) {
+      await sendEmailVerification(userCredential.user);
+      message_1 = "Email not verified. Verification email sent.";
+    } else if(!issuer.onboarding) {
+      message_2 = "You haven't done onboarding.";
+    } else message_2 = "Sign-in successful.";
+
+    return res.status(200).json({ message_1, message_2, token });
   } catch (error: any) {
-      if (error.code) {
-        return res.status(400).json({error: error.code});
-      } else if (error instanceof mongoose.Error) {
-        return res.status(400).json({ error: error.message });
-      } else {
-        return res.status(500).json({ error: 'Internal server error' });
-      }
+    if (error.code) {
+      return res.status(400).json({error: error.code});
+    } else if (error instanceof mongoose.Error) {
+      return res.status(400).json({ error: error.message });
+    } else {
+      return res.status(500).json({ error: 'Internal server error' });
     }
+  }
 };
 
 //Read
@@ -148,12 +163,12 @@ export const handleGetIssuerById = async (req: Request, res: Response): Promise<
 
     return res.json(issuer);
   } catch (error) {
-      if (error instanceof mongoose.Error) {
-        return res.status(400).json({ error: error.message });
-      } else {
-        return res.status(500).json({ error: 'Internal server error' });
-      }
+    if (error instanceof mongoose.Error) {
+      return res.status(400).json({ error: error.message });
+    } else {
+      return res.status(500).json({ error: 'Internal server error' });
     }
+  }
 };
 
 //Update
@@ -183,12 +198,12 @@ export const handleUpdateIssuerById = async (req: Request, res: Response): Promi
 
     return res.json(updatedIssuer);
   } catch (error) {
-      if (error instanceof mongoose.Error) {
-        return res.status(400).json({ error: error.message });
-      } else {
-        return res.status(500).json({ error: 'Internal server error' });
-      }
+    if (error instanceof mongoose.Error) {
+      return res.status(400).json({ error: error.message });
+    } else {
+      return res.status(500).json({ error: 'Internal server error' });
     }
+  }
 };
 
 //Check Onboarding Status
@@ -210,12 +225,12 @@ export const handleCheckOnboardingStatus = async (req: Request, res: Response): 
 
     return res.json({ status: issuer.onboarding });
   } catch (error) {
-      if (error instanceof mongoose.Error) {
-        return res.status(400).json({ error: error.message });
-      } else {
-        return res.status(500).json({ error: 'Internal server error' });
-      }
+    if (error instanceof mongoose.Error) {
+      return res.status(400).json({ error: error.message });
+    } else {
+      return res.status(500).json({ error: 'Internal server error' });
     }
+  }
 };
 
 //Onboarding
@@ -256,12 +271,12 @@ export const handleDoOnboarding = async (req: Request, res: Response): Promise<R
 
     return res.json(updatedIssuer);
   } catch (error) {
-      if (error instanceof mongoose.Error) {
-        return res.status(400).json({ error: error.message });
-      } else {
-        return res.status(500).json({ error: 'Internal server error' });
-      }
+    if (error instanceof mongoose.Error) {
+      return res.status(400).json({ error: error.message });
+    } else {
+      return res.status(500).json({ error: 'Internal server error' });
     }
+  }
 };
 
 //Delete
