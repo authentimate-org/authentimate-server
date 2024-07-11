@@ -11,12 +11,12 @@ declare global {
   namespace Express {
     interface Request {
       user?: DecodedIdToken;
-      issuerId?: string; // Add issuerId to the Request interface
+      issuerId?: string;
     }
   }
 }
 
-async function verifyToken(idToken: string): Promise<DecodedIdToken> {
+export async function verifyToken(idToken: string): Promise<DecodedIdToken> {
   try {
     const decodedToken = await admin.auth().verifyIdToken(idToken);
     return decodedToken;
@@ -27,34 +27,46 @@ async function verifyToken(idToken: string): Promise<DecodedIdToken> {
 }
 
 async function authMiddleware(req: Request, res: Response, next: NextFunction) {
+  const Endpoint = req.originalUrl;
+  // console.log(`Endpoint: ${req.originalUrl}`);
+
   const authorizationHeader = req.headers.authorization;
 
   if (!authorizationHeader) {
-    return res.status(401).send('Unauthorized (no authorization header)');
+    return res.status(401).send('Unauthorised (no authorization header)');
   }
 
   const idToken = authorizationHeader.split(' ')[1];
 
   if (!idToken) {
-    return res.status(401).send('Unauthorized (no token provided)');
+    return res.status(401).send('Unauthorised (no token provided)');
   }
 
   try {
     const decodedToken = await verifyToken(idToken);
     req.user = decodedToken;
 
-    // Fetch the issuer from the database
+    const userRecord = await admin.auth().getUser(req.user.uid);
+
+    if (!userRecord.emailVerified) {
+      return res.status(401).send('Unauthorised (email not verified)');
+    }
+
     const issuer = await IssuerModel.findOne({ firebaseUid: decodedToken.uid }).exec() as Issuer;
 
     if (!issuer) {
-      return res.status(401).send('Unauthorized (issuer not found)');
+      return res.status(401).send('Unauthorised (issuer not found)');
     }
 
-    req.issuerId = issuer._id.toString(); // Add the issuerId to the request
+    if(Endpoint !== '/api/v1/issuer/onboarding' && !issuer.onboarding) {
+      return res.status(401).send("Unauthorised (you haven't done onboarding)");
+    }
+
+    req.issuerId = issuer._id.toString();
     next();
   } catch (error) {
     console.error('Error in authMiddleware:', error);
-    return res.status(401).send('Unauthorized (invalid token)');
+    return res.status(401).send('Unauthorised (invalid token)');
   }
 }
 

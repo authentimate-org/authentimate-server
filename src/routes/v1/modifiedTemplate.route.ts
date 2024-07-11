@@ -1,16 +1,37 @@
 import express from 'express';
+import multer from 'multer';
 const router = express.Router();
-import { handleCreateModifiedTemplate, handleGetModifiedTemplateById, handleUpdateModifiedTemplateById, handleDeleteModifiedTemplateById } from '../../controllers/modifiedTemplate.controller'; 
+import { handleCreateModifiedTemplate, handleSaveModifiedTemplate, handleGetAllModifiedTemplatesByIssuerId, handleGetModifiedTemplateByProjectId, handleUpdateModifiedTemplateById, handleDeleteModifiedTemplateById } from '../../controllers/modifiedTemplate.controller'; 
 
+
+// const storage = multer.memoryStorage();
+// const upload = multer({ storage });
+
+
+// router
+// .route('/create')
+// .post(handleCreateModifiedTemplate);
+
+router
+.route('/save')
+.post(handleSaveModifiedTemplate);
+
+router
+.route('/all')
+.get(handleGetAllModifiedTemplatesByIssuerId);
 
 router
 .route('/')
-.post(handleCreateModifiedTemplate);
+.post(handleGetModifiedTemplateByProjectId);
 
-router
-.route('/:modifiedTemplateId')
-.get(handleGetModifiedTemplateById)
-.put(handleUpdateModifiedTemplateById)
-.delete(handleDeleteModifiedTemplateById);
+// router
+// .route('/update')
+// .put(handleUpdateModifiedTemplateById);
 
-export default router
+// router
+// .route('/delete')
+// .delete(handleDeleteModifiedTemplateById);
+
+
+
+export default router;
