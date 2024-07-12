@@ -1,42 +1,35 @@
 import { Request, Response } from 'express'
 import mongoose from 'mongoose'
-import { PremadeTemplateModel, Text, GraphicElement, Image } from '../models/premadeTemplate.model'
+import { PremadeTemplateModel, Component } from '../models/premadeTemplate.model'
+
+
 
 //Create
 export const handleCreatePremadeTemplate = async (req: Request, res: Response): Promise<Response> => {
-  // const { texts, recipientName, graphicElements, bgColor, templateImageURL } = req.body;
-
   try {
     // const { design, image } = req.body;
-    const { design } = req.body;
-    const designObject = JSON.parse(design);
-    const image = "https://commondatastorage.googleapis.com/codeskulptor-demos/riceracer_assets/img/car_4.png";
-    const recipientName = designObject.design.find((elem: any) => elem.type === 'recipientName') as Text;
-    const qrcode = designObject.design.find((elem: any) => elem.type === 'qrcode') as GraphicElement;
-    const graphicElements = designObject.design.filter((elem: any) => elem.name === 'shape') as GraphicElement[];
-    const images = designObject.design.filter((elem: any) => elem.name === 'image') as Image[];
-    const texts = designObject.design.filter((elem: any) => elem.name === 'text') as Text[];
+    const components = JSON.parse(req.body.design).design;
+    const imageURL = "https://commondatastorage.googleapis.com/codeskulptor-demos/riceracer_assets/img/car_4.png";
+    let recipientName: Component | null = null;
+    let qrcode: Component | null = null;
+
+    for (let i = 0; i < components.length; i++) {
+      if(recipientName === null || qrcode === null) {
+        if (components[i].type === 'recipientName') {
+          recipientName = components.splice(i, 1)[0];
+        } else if (components[i].type === 'qrcode') {
+          qrcode = components.splice(i, 1)[0];
+        }
+      }
+      else break; //Need optimization
+    }
 
     const newPremadeTemplate = new PremadeTemplateModel({
       recipientName,
       qrcode,
-      components: {
-        graphicElements,
-        images,
-        texts
-      },
-      templateImageURL: image
+      components,
+      templateImageURL: imageURL
     });
-    // const newPremadeTemplate: PremadeTemplate = {
-    //   texts,
-    //   recipientName,
-    //   graphicElements,
-    //   bgColor,
-    //   templateImageURL
-    // };
-
-    // const createdPremadeTemplate = new PremadeTemplateModel(newPremadeTemplate);
-    // await createdPremadeTemplate.save();
 
     await newPremadeTemplate.save();
 
@@ -84,18 +77,12 @@ export const handleGetPremadeTemplateById = async (req: Request, res: Response):
       return res.status(404).json({ error: 'Premade template not found' });
     }
 
-    const response = {
-      _id: premadeTemplate._id,
-      components: [
-        premadeTemplate.recipientName,
-        premadeTemplate.qrcode,
-        ...premadeTemplate.components.graphicElements,
-        ...premadeTemplate.components.images,
-        ...premadeTemplate.components.texts
-      ]
-    };
+    // const components: Component[] = premadeTemplate.components;
+    // components.push(premadeTemplate.recipientName);
+    // components.push(premadeTemplate.qrcode);
 
-    return res.status(200).json(response);
+    // return res.status(200).json({ "_id": premadeTemplate._id, "components": components });
+    return res.status(200).json(premadeTemplate);
   } catch (error) {
     if (error instanceof mongoose.Error) {
       return res.status(400).json({ error: error.message });
@@ -105,10 +92,7 @@ export const handleGetPremadeTemplateById = async (req: Request, res: Response):
   }
 };
 
-//Update
-
-
-//Delete One
+//Delete
 export const handleDeletePremadeTemplateById = async (req: Request, res: Response): Promise<Response> => {
   const { premadeTemplateId } = req.params;
 

@@ -27,7 +27,7 @@ export const handleCreateCertification = async (req: Request, res: Response): Pr
     //   return res.json({ error: 'Issuer not matched' });
     // }
 
-    for(const value of recipients){
+    for(const value of recipients) {
       let recipientId, imageURL;
       const newCertification: Certification = {
         issuerId: project.issuerId,
@@ -35,7 +35,7 @@ export const handleCreateCertification = async (req: Request, res: Response): Pr
         projectId,
         imageURL
       };
-
+      
       const createdCertification = new CertificationModel(newCertification);
       await createdCertification.save();
 
@@ -66,7 +66,6 @@ export const handleCreateCertification = async (req: Request, res: Response): Pr
 
       const qrCodeFilePath = path.join(__dirname, `../public/qrcodes/${createdCertification._id}.png`);
       await QRCode.toFile(qrCodeFilePath, certificateUrl);
-
     }
 
     return res.status(201).json({ message: "All certificates are created successfully"});
