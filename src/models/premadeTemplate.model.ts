@@ -22,7 +22,7 @@ interface Component {
   
 interface PremadeTemplate extends Document {
     recipientName: Component;
-    qrcode: Component;
+    qrCode: Component;
     components: Component[];
     templateImageURL: string;
 }
@@ -62,18 +62,20 @@ const componentSchema = new Schema<Component>({
 const premadeTemplateSchema = new Schema<PremadeTemplate>({
     recipientName: {
         type: componentSchema,
-        required: true
+        required: false
     },
-    qrcode: {
+    qrCode: {
         type: componentSchema,
-        required: true
+        required: false
     },
     components: [componentSchema],
     templateImageURL: {
         type: String,
         required: true
     }
-}, { timestamps: true });
+},
+{ timestamps: true }
+);
 
 const PremadeTemplateModel = mongoose.model<PremadeTemplate>('premadeTemplate', premadeTemplateSchema);
 

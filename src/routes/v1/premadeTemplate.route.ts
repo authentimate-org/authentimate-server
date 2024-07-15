@@ -1,17 +1,17 @@
 import express from 'express'
 import multer from 'multer';
 const router = express.Router()
-import { handleSelectPremadeTemplate } from '../../controllers/project.controller'
 import { handleCreatePremadeTemplate, handleGetAllPremadeTemplates, handleGetPremadeTemplateById, handleDeletePremadeTemplateById } from '../../controllers/premadeTemplate.controller'
+import { handleSelectPremadeTemplate } from '../../controllers/project.controller'
 
 
-// const storage = multer.memoryStorage();
-// const upload = multer({ storage });
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
 
 
 router
 .route('/create')
-.post(handleCreatePremadeTemplate);
+.post(upload.single('image'), handleCreatePremadeTemplate);
 
 router
 .route('/all')
@@ -21,18 +21,9 @@ router
 .route('/')
 .post(handleGetPremadeTemplateById);
 
-// router
-// .route('/delete')
-// .delete(handleDeletePremadeTemplateById);
-
 router
 .route('/add-to-project')
-.post(handleSelectPremadeTemplate);
-
-// router
-// .route('/remove')
-// .post(handleRemovePremadeTemplate);
-
+.put(handleSelectPremadeTemplate);
 
 
 export default router

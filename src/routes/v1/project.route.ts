@@ -2,7 +2,7 @@ import express from "express"
 const router = express.Router()
 import modifiedTemplateRoutes from "./modifiedTemplate.route"
 import certificationRoutes from "./certification.route"
-import { handleCreateProject, handleGetAllProjectsByIssuerId, handleGetProjectById, handleUpdateProjectById, handleDeleteProjectById } from '../../controllers/project.controller'
+import { handleCreateProject, handleGetAllProjectsByIssuerId, handleGetProjectById, handleGetTemplateByProjectId, handleUpdateProjectById, handleDeleteProjectById } from '../../controllers/project.controller'
 
 
 
@@ -17,6 +17,10 @@ router
 router
 .route('/')
 .post(handleGetProjectById);
+
+router
+.route('/get-template')
+.post(handleGetTemplateByProjectId);
 
 router
 .route("/update")

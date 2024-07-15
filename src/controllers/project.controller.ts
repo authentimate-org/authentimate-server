@@ -2,10 +2,11 @@ import { Request, Response } from 'express'
 import mongoose from 'mongoose'
 import { IssuerModel } from '../models/issuer.model'
 import { Project, ProjectModel } from '../models/project.model'
-import { ModifiedTemplateModel } from '../models/modifiedTemplate.model'
+import { PremadeTemplateModel } from '../models/premadeTemplate.model'
+import { ModifiedTemplateModel, Component } from '../models/modifiedTemplate.model'
 import { RecipientModel } from '../models/recipient.model'
 import { CertificationModel } from '../models/certification.model'
-import { PremadeTemplateModel } from '../models/premadeTemplate.model'
+
 
 // Create
 export const handleCreateProject = async (req: Request, res: Response): Promise<Response> => {
@@ -19,7 +20,7 @@ export const handleCreateProject = async (req: Request, res: Response): Promise<
     const project = await ProjectModel.find({ issuerId: req.issuerId, projectName: projectName, category: category }).exec();
 
     if (project.length !== 0) {
-      return res.json({ error: 'A project with this name already exists in this category'});
+      return res.status(400).json({ error: 'A project with this name already exists in this category'});
     }
 
     const newProject: Project = new ProjectModel({
@@ -36,7 +37,7 @@ export const handleCreateProject = async (req: Request, res: Response): Promise<
       { new: true }
     ).exec();
 
-    return res.status(201).json({ createdProject });
+    return res.status(201).json({ message: 'Project created successfully.', _id: createdProject._id, stage: createdProject.stage });
   } catch (error) {
     console.error('Error in handleCreateProject:', error);
     if (error instanceof mongoose.Error) {
@@ -60,7 +61,7 @@ export const handleGetAllProjectsByIssuerId = async (req: Request, res: Response
       return res.status(404).json({ error: 'Projects not found' });
     }
   
-    return res.json(allProjects);
+    return res.status(200).json(allProjects);
   } catch (error) {
     if (error instanceof mongoose.Error) {
       return res.status(400).json({ error: error.message });
@@ -93,7 +94,7 @@ export const handleGetProjectById = async (req: Request, res: Response): Promise
       return res.status(401).json({ error: 'Unauthorized (issuer not matched)' });
     }
 
-    return res.json(project);
+    return res.status(200).json(project);
   } catch (error) {
     if (error instanceof mongoose.Error) {
       return res.status(400).json({ error: error.message });
@@ -102,6 +103,70 @@ export const handleGetProjectById = async (req: Request, res: Response): Promise
     }
   }
 };
+
+//Get Template
+export const handleGetTemplateByProjectId = async (req: Request, res: Response): Promise<Response> => {
+  const { projectId } = req.body;
+
+  try{
+    if (!req.user || !req.issuerId) {
+      return res.status(401).json({ error: 'Unauthorized (user not found)' });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(projectId)) {
+      return res.status(400).json({ error: 'Invalid project ID' });
+    }
+
+    const project = await ProjectModel.findById(projectId).exec();
+
+    if (!project) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    if (project.issuerId.toString() != req.issuerId) {
+      const project = await ProjectModel.findById(projectId).exec();
+
+      return res.status(401).json({ error: 'Unauthorized (issuer not matched)' });
+    }
+
+    if (project.stage === 'PROJECT_CREATED') {
+      return res.status(404).json({ error: 'Template not found.' });
+    } else if (project.stage === 'TEMPLATE_SELECTED' && project.modifiedTemplateId) {
+      const modifiedTemplate = await ModifiedTemplateModel.findById(project.modifiedTemplateId);
+
+      if (!modifiedTemplate) {
+        return res.status(404).json({ error: 'Modified template not found.' });
+      }
+  
+      const components: Component[] = modifiedTemplate.components;
+      components.push(modifiedTemplate.recipientName);
+      components.push(modifiedTemplate.qrCode);
+
+      return res.status(200).json(components);
+    } else if (project.stage === 'TEMPLATE_SELECTED') {
+      const premadeTemplate = await PremadeTemplateModel.findById(project.templateId);
+
+      if (!premadeTemplate) {
+        return res.status(404).json({ error: 'Premade template not found' });
+      }
+  
+      const components: Component[] = premadeTemplate.components;
+      components.push(premadeTemplate.recipientName);
+      components.push(premadeTemplate.qrCode);
+  
+      return res.status(200).json(components);
+    } else {
+      return res.status(400).json({ error: "You can't get the template at this stage." });
+    }
+
+  } catch (error) {
+    if (error instanceof mongoose.Error) {
+      return res.status(400).json({ error: error.message });
+    } else {
+      return res.status(500).json({ error: 'Internal server error' });
+    }
+  }
+}
 
 //Update
 export const handleUpdateProjectById = async (req: Request, res: Response): Promise<Response> => {
@@ -181,9 +246,9 @@ export const handleSelectPremadeTemplate = async (req: Request, res: Response): 
       return res.status(401).json({ error: 'Unauthorised (issuer not matched)' });
     }
 
-    // if(project.stage !== 'PROJECT_CREATED') {
-    //   return res.json({ message: 'A template is already selected for this project' });
-    // }
+    if(project.stage !== 'PROJECT_CREATED') {
+      return res.status(400).json({ error: 'A template is already selected for this project' });
+    }
 
     const updatedProject = await ProjectModel.findByIdAndUpdate(
       projectId,
@@ -191,7 +256,7 @@ export const handleSelectPremadeTemplate = async (req: Request, res: Response): 
       { new: true }
     ).exec();
 
-    return res.json(updatedProject);
+    return res.status(200).json({ message: 'Premade template added successfully.' });
   } catch (error) {
     if (error instanceof mongoose.Error) {
       return res.status(400).json({ error: error.message });

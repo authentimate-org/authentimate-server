@@ -24,7 +24,7 @@ interface ModifiedTemplate extends Document {
     projectId: mongoose.Schema.Types.ObjectId;
     issuerId: mongoose.Schema.Types.ObjectId;
     recipientName: Component;
-    qrcode: Component;
+    qrCode: Component;
     components: Component[];
 }
   
@@ -75,12 +75,14 @@ const modifiedTemplateSchema = new Schema<ModifiedTemplate>({
         type: componentSchema,
         required: true
     },
-    qrcode: {
+    qrCode: {
         type: componentSchema,
         required: true
     },
     components: [componentSchema]
-}, { timestamps: true });
+},
+{ timestamps: true }
+);
 
 const ModifiedTemplateModel = mongoose.model<ModifiedTemplate>('modifiedTemplate', modifiedTemplateSchema);
 

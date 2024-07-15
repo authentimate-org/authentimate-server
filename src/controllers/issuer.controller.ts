@@ -6,26 +6,28 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, se
 import { IssuerModel, Issuer } from '../models/issuer.model'
 
 
+
 const auth = getAuth(firebaseApp);
 
 async function signInWithCustomToken(customToken: string): Promise<string> {
-  const response = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key=${process.env.VITE_FIREBASE_API_KEY}`, {
+  try {
+    const response = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key=${process.env.VITE_FIREBASE_API_KEY}`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-          token: customToken,
-          returnSecureToken: true,
-      }),
-  });
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: customToken, returnSecureToken: true })
+    });
 
-  const data = await response.json();
-  if (!response.ok) {
+    const data = await response.json();
+
+    if (!response.ok) {
       throw new Error(data.error.message);
-  }
+    }
 
-  return data.idToken;
+    return data.idToken;
+  } catch (error) {
+    console.log('--------Error in signInWithCustomToken---------');
+    throw error;
+  }
 }
 
 //SignUp
@@ -37,29 +39,19 @@ export const handleSignUp = async (req: Request, res: Response): Promise<Respons
       return res.status(400).json({ error: 'Password is required' });
     }
 
-    // const user = await admin.auth().createUser({
-    //   email: email,
-    //   password: password,
-    // });
-
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const user = userCredential.user as FirebaseUser;
-
-    // const user = await admin.auth().getUser(user.uid);
     
     if (!user) {
       return res.status(400).json({ error: "Couldn't create user on fireabse." })
     }
-    console.log(userCredential);
-    console.log("-------------------------------------------");
-    console.log(user);
 
     const customToken = await admin.auth().createCustomToken(user.uid);
     const idToken = await signInWithCustomToken(customToken);
 
     if (!customToken || !idToken) {
       await admin.auth().deleteUser(user.uid);
-      return res.json({ error: "Couldn't create token." });
+      return res.status(400).json({ error: "Couldn't create token." });
     }
  
     const newIssuer: Issuer = new IssuerModel({
@@ -71,16 +63,10 @@ export const handleSignUp = async (req: Request, res: Response): Promise<Respons
 
     if (!createdIssuer) {
       await admin.auth().deleteUser(user.uid);
-      return res.json({ error: "Couldn't create issuer on MongoDB." });
+      return res.status(400).json({ error: "Couldn't create issuer on MongoDB." });
     }
 
     await sendEmailVerification(user);
-
-    // const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-
-    // console.log(userCredential);
-
-    // await sendEmailVerification(userCredential.user);
 
     return res.status(201).json({ messsage: "Sign-up successful. Verification email sent.", token: idToken });
   } catch (error: any) {
@@ -117,22 +103,22 @@ export const handleSignIn = async (req: Request, res: Response): Promise<Respons
     const issuer = await IssuerModel.findOne({ businessMail: email }).exec();
 
     if(!issuer) {
-      return res.status(400).json({ error: 'Issuer not found.' });
+      return res.status(404).json({ error: 'Issuer not found.' });
     }
 
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
     const token = await userCredential.user?.getIdToken();
 
-    let message_1, message_2;
+    let message;
 
     if(!userCredential.user.emailVerified) {
       await sendEmailVerification(userCredential.user);
-      message_1 = "Email not verified. Verification email sent.";
+      message = "Email not verified. Verification email sent.";
     } else if(!issuer.onboarding) {
-      message_2 = "You haven't done onboarding.";
-    } else message_2 = "Sign-in successful.";
+      message = "You haven't done onboarding.";
+    } else message = "Sign-in successful.";
 
-    return res.status(200).json({ message_1, message_2, token });
+    return res.status(200).json({ message, token });
   } catch (error: any) {
     if (error.code) {
       return res.status(400).json({error: error.code});
@@ -161,7 +147,7 @@ export const handleGetIssuerById = async (req: Request, res: Response): Promise<
       return res.status(404).json({ error: 'Issuer not found' });
     }
 
-    return res.json(issuer);
+    return res.status(200).json(issuer);
   } catch (error) {
     if (error instanceof mongoose.Error) {
       return res.status(400).json({ error: error.message });
@@ -196,7 +182,7 @@ export const handleUpdateIssuerById = async (req: Request, res: Response): Promi
       return res.status(404).json({ error: 'Issuer not found' });
     }
 
-    return res.json(updatedIssuer);
+    return res.status(200).json(updatedIssuer);
   } catch (error) {
     if (error instanceof mongoose.Error) {
       return res.status(400).json({ error: error.message });
@@ -223,7 +209,7 @@ export const handleCheckOnboardingStatus = async (req: Request, res: Response): 
       return res.status(404).json({ error: 'Issuer not found' });
     }
 
-    return res.json({ status: issuer.onboarding });
+    return res.status(200).json({ status: issuer.onboarding });
   } catch (error) {
     if (error instanceof mongoose.Error) {
       return res.status(400).json({ error: error.message });
@@ -247,7 +233,7 @@ export const handleDoOnboarding = async (req: Request, res: Response): Promise<R
     }
 
     if (!(category && ((companyName && CIN) ^ instituteName ^ issuerName) && designation && address)) {
-      return res.send('All fields are required');
+      return res.status(400).json({ error: 'All fields are required' });
     }
 
     const updatedIssuer = await IssuerModel.findByIdAndUpdate(
@@ -269,7 +255,7 @@ export const handleDoOnboarding = async (req: Request, res: Response): Promise<R
       return res.status(404).json({ error: 'Issuer not found' });
     }
 
-    return res.json(updatedIssuer);
+    return res.status(200).json({ error: 'Issuer onboarded successfully.'});
   } catch (error) {
     if (error instanceof mongoose.Error) {
       return res.status(400).json({ error: error.message });
@@ -298,7 +284,7 @@ export const handleDeleteIssuerById = async (req: Request, res: Response): Promi
 
     await admin.auth().deleteUser(req.user.uid);
 
-    return res.json({ message: 'Issuer deleted successfully' });
+    return res.status(200).json({ message: 'Issuer deleted successfully' });
   } catch (error) {
     if (error instanceof mongoose.Error) {
       return res.status(400).json({ error: error.message });

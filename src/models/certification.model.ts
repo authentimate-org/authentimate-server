@@ -1,32 +1,41 @@
 import mongoose, { Document, Schema } from 'mongoose';
+import { v4 as uuidv4 } from 'uuid';
 
-interface Certification {
-    issuerId: mongoose.Types.ObjectId | undefined;
-    recipientId:mongoose.Types.ObjectId | undefined;
-    projectId: mongoose.Types.ObjectId | unknown;
-    imageURL: string | undefined;
+interface Certification extends Document{
+    issuerId: mongoose.Types.ObjectId;
+    recipientId: mongoose.Types.ObjectId | string;
+    recipientName: string;
+    projectId: mongoose.Types.ObjectId;
+    certificationId: string;
 }
 
 const certificationSchema = new Schema<Certification>({
     issuerId: {
-        type: Schema.Types.ObjectId,
+        type: mongoose.Schema.Types.ObjectId,
         ref: 'issuer',
         required: true
     },
     recipientId: {
-        type: Schema.Types.ObjectId,
+        type: mongoose.Schema.Types.ObjectId,
         ref: 'recepient'
     },
+    recipientName: {
+        type: String,
+        required: true
+    },
     projectId: {
-        type: Schema.Types.ObjectId,
+        type: mongoose.Schema.Types.ObjectId,
         ref: 'project',
         required: true
     },
-    imageURL: {
+    certificationId: {
         type: String,
-        default: './public/certificates/<recipientId>.jpg'
+        default: () => uuidv4(),
+        unique: true
     }
-});
+},
+{ timestamps: true }
+);
 
 const CertificationModel = mongoose.model<Certification>('certification', certificationSchema);
 export { CertificationModel, Certification };

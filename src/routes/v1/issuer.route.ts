@@ -1,6 +1,5 @@
 import express from "express"
 const router = express.Router()
-import authMiddleware from "../../middleware/auth.middleware"
 import emailValidatorMiddleware from '../../middleware/emailValidator.middleware'
 import { handleSignUp, handleSignIn, handleGetIssuerById, handleUpdateIssuerById, handleCheckOnboardingStatus, handleDoOnboarding, handleDeleteIssuerById } from "../../controllers/issuer.controller"
 
@@ -15,21 +14,21 @@ router
 .post(emailValidatorMiddleware, handleSignIn);
 
 router
-.route('/getUser')
-.get(authMiddleware, handleGetIssuerById);
+.route('/')
+.get(handleGetIssuerById);
 
 router
 .route('/update')
-.put(authMiddleware, handleUpdateIssuerById);
+.put(handleUpdateIssuerById);
 
 router
 .route('/onboarding')
-.get(authMiddleware, handleCheckOnboardingStatus)
-.put(authMiddleware, handleDoOnboarding);
+.get(handleCheckOnboardingStatus)
+.put(handleDoOnboarding);
 
 router
 .route('/delete')
-.delete(authMiddleware, handleDeleteIssuerById);
+.delete(handleDeleteIssuerById);
 
 
 
