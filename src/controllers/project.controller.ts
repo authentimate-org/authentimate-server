@@ -150,7 +150,7 @@ export const handleUpdateProjectById = async (req: Request, res: Response): Prom
 
 //Select Template
 export const handleSelectPremadeTemplate = async (req: Request, res: Response): Promise<Response> => {
-  const { projectId, premadeTemplateId } = req.body;
+  const { projectId, templateId } = req.body;
 
   try {
     if (!req.user || !req.issuerId) {
@@ -161,11 +161,11 @@ export const handleSelectPremadeTemplate = async (req: Request, res: Response): 
       return res.status(400).json({ error: 'Invalid project ID' });
     }
 
-    if (!mongoose.Types.ObjectId.isValid(premadeTemplateId)) {
+    if (!mongoose.Types.ObjectId.isValid(templateId)) {
       return res.status(400).json({ error: 'Invalid premade template ID' });
     }
 
-    const premadeTemplate = await PremadeTemplateModel.findById(premadeTemplateId);
+    const premadeTemplate = await PremadeTemplateModel.findById(templateId);
 
     if (!premadeTemplate) {
       return res.status(404).json({ error: 'Premade template not found' });
@@ -187,7 +187,7 @@ export const handleSelectPremadeTemplate = async (req: Request, res: Response): 
 
     const updatedProject = await ProjectModel.findByIdAndUpdate(
       projectId,
-      { templateId: premadeTemplateId, stage: 'TEMPLATE_SELECTED' },
+      { templateId: templateId, stage: 'TEMPLATE_SELECTED' },
       { new: true }
     ).exec();
 

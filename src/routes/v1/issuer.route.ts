@@ -8,11 +8,11 @@ import { handleSignUp, handleSignIn, handleGetIssuerById, handleUpdateIssuerById
 
 router
 .route('/signUp')
-.post(emailValidatorMiddleware, handleSignUp);
+.post( handleSignUp);
 
 router
 .route('/signIn')
-.post(emailValidatorMiddleware, handleSignIn);
+.post( handleSignIn);
 
 router
 .route('/getUser')

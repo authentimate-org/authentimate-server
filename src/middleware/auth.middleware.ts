@@ -58,9 +58,9 @@ async function authMiddleware(req: Request, res: Response, next: NextFunction) {
       return res.status(401).send('Unauthorised (issuer not found)');
     }
 
-    if(Endpoint !== '/api/v1/issuer/onboarding' && !issuer.onboarding) {
-      return res.status(401).send("Unauthorised (you haven't done onboarding)");
-    }
+    // if(Endpoint !== '/api/v1/issuer/onboarding' && !issuer.onboarding) {
+    //   return res.status(401).send("Unauthorised (you haven't done onboarding)");
+    // }
 
     req.issuerId = issuer._id.toString();
     next();

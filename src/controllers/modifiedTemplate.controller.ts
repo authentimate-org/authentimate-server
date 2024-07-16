@@ -1,23 +1,34 @@
 import { Request, Response } from 'express'
 import mongoose from 'mongoose'
-import multer from 'multer';
 import { ProjectModel } from '../models/project.model'
-import { ModifiedTemplateModel, Text, GraphicElement, Image } from '../models/modifiedTemplate.model'
+import { ModifiedTemplateModel, Component } from '../models/modifiedTemplate.model'
+
 
 
 //Save
 export const handleSaveModifiedTemplate = async (req: Request, res: Response): Promise<Response> => {
   try{
-    // const { projectId, design } = req.body;
-    const { design } = req.body;
-    const designObject = JSON.parse(design);
-    const recipientName = designObject.design.find((elem: any) => elem.type === 'recipientName') as Text;
-    const qrcode = designObject.design.find((elem: any) => elem.type === 'qrcode') as GraphicElement;
-    const graphicElements = designObject.design.filter((elem: any) => elem.name === 'shape' || elem.name === 'main_frame') as GraphicElement[];
-    const images = designObject.design.filter((elem: any) => elem.name === 'image' && elem.type !== 'qrcode') as Image[];
-    const texts = designObject.design.filter((elem: any) => elem.name === 'text' && elem.type !== 'recipientName') as Text[];
-  
-    const projectId = "668e2704696681865e92351a";
+    let { projectId } = req.body;
+    const components = JSON.parse(req.body.design).design;
+    let recipientName: Component | null= null;
+    let qrcode: Component | null = null;
+
+    for (let i = 0; i < components.length; i++) {
+      if(recipientName === null || qrcode === null) {
+        if (components[i].type === 'recipientName') {
+          recipientName = components.splice(i, 1)[0];
+          i--;
+        } else if (components[i].type === 'qrcode') {
+          qrcode = components.splice(i, 1)[0];
+          i--;
+        }
+      }
+      else break; //Need optimization
+    }
+
+    if (!projectId) {
+      projectId = "669010a4a1d102549f432e92";
+    }
 
     if (!req.user || !req.issuerId) {
       return res.status(401).json({ error: 'Unauthorised (user not found)' });
@@ -43,11 +54,7 @@ export const handleSaveModifiedTemplate = async (req: Request, res: Response): P
         issuerId: req.issuerId,
         recipientName,
         qrcode,
-        components: {
-          graphicElements,
-          images,
-          texts
-        }
+        components
       });
 
       await newModifiedTemplate.save();
@@ -62,11 +69,7 @@ export const handleSaveModifiedTemplate = async (req: Request, res: Response): P
         project.modifiedTemplateId,
         { recipientName,
           qrcode,
-          components: {
-            graphicElements,
-            images,
-            texts
-          }
+          components
         },
         { new: true }
       );
@@ -83,92 +86,11 @@ export const handleSaveModifiedTemplate = async (req: Request, res: Response): P
     if (error instanceof mongoose.Error) {
       return res.status(400).json({ error: error.message });
     } else {
+      console.log(`Internal server error: ${error}`);
       return res.status(500).json({ error: 'Internal server error' });
     }
   }
 }
-//Create
-export const handleCreateModifiedTemplate = async (req: Request, res: Response): Promise<Response> => {
-  // const { texts, recipientName, graphicElements, bgColor } = req.body;
-
-  // const { projectId, design } = req.body;
-  const { design } = req.body;
-  const designObject = JSON.parse(design);
-  const recipientName = designObject.design.find((elem: any) => elem.type === 'recipientName') as Text;
-  const qrcode = designObject.design.find((elem: any) => elem.type === 'qrcode') as GraphicElement;
-  const graphicElements = designObject.design.filter((elem: any) => elem.name === 'shape') as GraphicElement[];
-  const images = designObject.design.filter((elem: any) => elem.name === 'image') as Image[];
-  const texts = designObject.design.filter((elem: any) => elem.name === 'text') as Text[];
-
-  const projectId = "668d6d6a067f9213c96f5ed6";
-
-  try {
-    if (!req.user || !req.issuerId) {
-      return res.status(401).json({ error: 'Unauthorised (user not found)' });
-    }
-
-    if (!mongoose.Types.ObjectId.isValid(projectId)) {
-      return res.status(400).json({ error: 'Invalid project ID' });
-    }
-
-    const project =  await ProjectModel.findById(projectId).exec();
-
-    if (!project) {
-      return res.status(404).json({ error: 'Project not found' });
-    }
-
-    if (project.issuerId.toString() != req.issuerId) {
-      return res.status(401).json({ error: 'Unauthorized (issuer not matched)' });
-    }
-    
-    const premadeTemplateId = project.templateId;
-
-    if (!premadeTemplateId) {
-      return res.json({ error: 'No template has been selected yet' });
-    }
-
-    if(project.stage === 'TEMPLATE_FINALISED' || project.stage === 'ISSUED') {
-      return res.json({ error: 'A template is already modified for this project' });
-    }
-
-    // const newModifiedTemplate: ModifiedTemplate = {
-    //   projectId,
-    //   templateId: premadeTemplateId,
-    //   texts,
-    //   recipientName,
-    //   graphicElements: designObject.design,
-    //   bgColor
-    // };
-    const newModifiedTemplate = new ModifiedTemplateModel({
-      projectId,
-      issuerId: req.issuerId,
-      recipientName,
-      qrcode,
-      components: {
-        graphicElements,
-        images,
-        texts
-      }
-    });
-
-    // const createdModifiedTemplate = new ModifiedTemplateModel(newModifiedTemplate);
-    await newModifiedTemplate.save();
-
-    await ProjectModel.findByIdAndUpdate(
-      projectId,
-      { modifiedTemplateId: newModifiedTemplate._id, stage: 'TEMPLATE_FINALISED' },
-      { new: true }
-    ).exec();
-
-    return res.status(201).json({ message: "Template saved." });
-  } catch (error) {
-    if (error instanceof mongoose.Error) {
-      return res.status(400).json({ error: error.message });
-    } else {
-      return res.status(500).json({ error: 'Internal server error' });
-    }
-  }
-};
 
 //Read All
 export const handleGetAllModifiedTemplatesByIssuerId = async (req: Request, res: Response): Promise<Response> => {
@@ -222,89 +144,11 @@ export const handleGetModifiedTemplateByProjectId = async (req: Request, res: Re
       return res.status(404).json({ error: 'Modified template not found.' });
     }
 
-    const response = {
-      _id: modifiedTemplate._id,
-      components: [
-        modifiedTemplate.recipientName,
-        modifiedTemplate.qrcode,
-        ...modifiedTemplate.components.graphicElements,
-        ...modifiedTemplate.components.images,
-        ...modifiedTemplate.components.texts
-      ]
-    };
+    const components: Component[] = modifiedTemplate.components;
+    components.push(modifiedTemplate.recipientName);
+    components.push(modifiedTemplate.qrcode);
 
-    return res.status(200).json(response);
-  } catch (error) {
-    if (error instanceof mongoose.Error) {
-      return res.status(400).json({ error: error.message });
-    } else {
-      return res.status(500).json({ error: 'Internal server error' });
-    }
-  }
-};
-
-//Update
-export const handleUpdateModifiedTemplateById = async (req: Request, res: Response): Promise<Response> => {
-  // const { modifiedTemplateId, texts, recipientName, graphicElements, bgColor } = req.body;
-
-    // const { projectId, design } = req.body;
-    const { design } = req.body;
-    const designObject = JSON.parse(design);
-    const recipientName = designObject.design.find((elem: any) => elem.type === 'recipientName') as Text;
-    const qrcode = designObject.design.find((elem: any) => elem.type === 'qrcode') as GraphicElement;
-    const graphicElements = designObject.design.filter((elem: any) => elem.name === 'shape') as GraphicElement[];
-    const images = designObject.design.filter((elem: any) => elem.name === 'image') as Image[];
-    const texts = designObject.design.filter((elem: any) => elem.name === 'text') as Text[];
-  
-    const projectId = "668d6d6a067f9213c96f5ed6";
-
-  try {
-    if (!req.user || !req.issuerId) {
-      return res.status(401).json({ error: 'Unauthorised (user not found)' });
-    }
-
-    if (!mongoose.Types.ObjectId.isValid(projectId)) {
-      return res.status(400).json({ error: 'Invalid project ID' });
-    }
-
-    const project =  await ProjectModel.findById(projectId).exec();
-
-    if (!project) {
-      return res.status(404).json({ error: 'Project not found' });
-    }
-
-    if (project.issuerId.toString() != req.issuerId) {
-      return res.status(401).json({ error: 'Unauthorized (issuer not matched)' });
-    }
-    
-    const modifiedTemplateId = project.modifiedTemplateId;
-
-    if (!modifiedTemplateId) {
-      return res.json({ error: 'Modified template not found.' });
-    }
-
-    if(project.stage === 'ISSUED') {
-      return res.json({ error: "You can't save the template at this stage." });
-    }
-
-    const updatedModifiedTemplate = await ModifiedTemplateModel.findByIdAndUpdate(
-      modifiedTemplateId,
-      { recipientName,
-        qrcode,
-        components: {
-          graphicElements,
-          images,
-          texts
-        }
-      },
-      { new: true }
-    );
-    
-    if (!updatedModifiedTemplate) {
-      return res.status(404).json({ error: 'Modified template not found' });
-    }
-
-    return res.status(200).json({ message: "Template saved." });
+    return res.status(200).json({ "_id": modifiedTemplate._id, "components": components });
   } catch (error) {
     if (error instanceof mongoose.Error) {
       return res.status(400).json({ error: error.message });

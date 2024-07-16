@@ -6,7 +6,7 @@ import projectRoutes from './project.route'
 import premadeTemplateRoutes from "./premadeTemplate.route"
 import modifiedTemplateRoutes from "./modifiedTemplate.route"
 import certificationRoutes from "./certification.route"
-
+import imageRoutes from "./imageRoutes.route"
 
 
 router.use('/issuer', issuerRoutes);
@@ -19,6 +19,7 @@ router.use('/modifiedTemplate', authMiddleware, modifiedTemplateRoutes);
 
 router.use('/certificate', authMiddleware, certificationRoutes);
 
+router.use('/image', authMiddleware, imageRoutes);
 
 
 export default router
