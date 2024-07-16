@@ -23,40 +23,6 @@ async function emailValidatorMiddleware(req: Request, res: Response, next: NextF
     const { email } = req.body;
     const endPoint = req.originalUrl;
 
-    // if(endPoint == '/api/v1/certification/create') {
-    //     const { recipients } = req.body;
-        
-    //     for (const recipient of recipients) {
-    //         try{
-    //             recipient.isEmailValid = false;
-
-    //             if (!recipient.email) {
-    //                 recipient.emailValidationError = 'Email is required';
-    //                 continue;
-    //             }
-            
-    //             if (!businessEmailPattern.test(recipient.email)) {
-    //                 recipient.emailValidationError = 'Invalid email format';
-    //                 continue;
-    //             }
-            
-    //             const emailDomain = email.split('@')[1];
-            
-    //             if (!publicEmailDomains.includes(emailDomain)) {
-    //                 recipient.emailValidationError = 'Email must be a business email';
-    //                 continue;
-    //             }
-
-    //             recipient.isEmailValid = true;
-
-    //         } catch (error) {
-    //             recipient.emailValidationError = 'Invalid email address';
-    //         }
-    //     }
-
-    //     return next();
-    // }
-
     try{
         if (!email) {
             return res.status(400).json({ error: 'Business email is required' });

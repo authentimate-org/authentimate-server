@@ -47,9 +47,9 @@ export const handleSignUp = async (req: Request, res: Response): Promise<Respons
     }
 
     const customToken = await admin.auth().createCustomToken(user.uid);
-    const idToken = await signInWithCustomToken(customToken);
+    // const idToken = await signInWithCustomToken(customToken);
 
-    if (!customToken || !idToken) {
+    if (!customToken) {
       await admin.auth().deleteUser(user.uid);
       return res.status(400).json({ error: "Couldn't create token." });
     }
@@ -68,7 +68,7 @@ export const handleSignUp = async (req: Request, res: Response): Promise<Respons
 
     await sendEmailVerification(user);
 
-    return res.status(201).json({ messsage: "Sign-up successful. Verification email sent.", token: idToken });
+    return res.status(201).json({ messsage: "Sign-up successful. Verification email sent.", token: customToken });
   } catch (error: any) {
     if (error.code) {
       switch (error.code) {
@@ -232,7 +232,23 @@ export const handleDoOnboarding = async (req: Request, res: Response): Promise<R
       return res.status(400).json({ error: 'Invalid Issuer ID' });
     }
 
-    if (!(category && ((companyName && CIN) ^ instituteName ^ issuerName) && designation && address)) {
+    if (!category) {
+      return res.status(400).json({ error: 'Category is required' });
+    }
+
+    let isValid = true;
+
+    if (category === 'INDIVIDUAL') {
+      isValid = issuerName && designation && address;
+    } else if (category === 'COMPANY') {
+      isValid = issuerName && companyName && CIN && designation && address;
+    } else if (category === 'INSTITUTE') {
+      isValid = issuerName && instituteName && designation && address;
+    } else {
+      isValid = false;
+    }
+
+    if (!isValid) {
       return res.status(400).json({ error: 'All fields are required' });
     }
 

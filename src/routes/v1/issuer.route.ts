@@ -14,7 +14,7 @@ router
 .post(emailValidatorMiddleware, handleSignIn);
 
 router
-.route('/')
+.route('/getUser')
 .get(handleGetIssuerById);
 
 router

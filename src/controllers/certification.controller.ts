@@ -1,7 +1,8 @@
 import { Request, Response } from 'express';
 import mongoose from 'mongoose';
 import QRCode from 'qrcode';
-import transporter from '../config/transporter';
+// import transporter from '../config/transporter';
+import mailer from '../utils/mailer';
 import { emailValidator } from '../middleware/emailValidator.middleware';
 import { IssuerModel } from '../models/issuer.model'
 import { ProjectModel } from '../models/project.model';
@@ -14,65 +15,20 @@ import { handleCreateRecipient } from './recipient.controller';
 
 interface Res {
   email: string | undefined;
-  certificationCreated: boolean;
+  isCertificationCreated: boolean;
   certificationId?: string | undefined;
   error?: string
 }
 
 async function generateQRCode(certificaionId: string): Promise<string> {
   try {
-    const certificateUrl = `http://${process.env.Domain_IP}:5000/api/v2/certification/${certificaionId}`;
+    const certificateUrl = `http://${process.env.DOMAIN_IP}:5000/api/v2/certification/${certificaionId}`;
     const qrCode = await QRCode.toDataURL(certificateUrl);
 
     return qrCode;
   } catch (error) {
     console.log('--------Error in generateQRCode---------');
     throw error;
-  }
-}
-
-async function sendCertificationToRecipientEmail(recipientEmail: string, recipientName: string, issuerName: string | undefined, certificateUrl: string) {
-  const subject = 'Your Certificate of Achievement';
-  const text = 'You have received a certificate. To see your certificated tap the link given below.';
-  const html = `
-  <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-    <h2 style="text-align: center; color: #333;">Congratulations, ${recipientName}!</h2>
-    <p style="text-align: center; color: #333;">
-      We are pleased to inform you that you have been awarded a certificate by '${issuerName}'.
-    </p>
-    <p style="text-align: center; color: #333;">
-      Please find your certificate by clicking on the link below:
-    </p>
-    <div style="text-align: center; margin: 20px 0;">
-      <a href="${certificateUrl}" style="background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
-        View Your Certificate
-      </a>
-    </div>
-    <p style="text-align: center; color: #333;">
-      Thank you for your hard work and dedication.
-    </p>
-    <p style="text-align: center; color: #333;">
-      Sincerely,
-      <br />
-      The Authentimate Team
-    </p>
-  </div>
-`;
-
-  const mailOptions = {
-    from: process.env.Authentimate_Official_Email,
-    to: recipientEmail,
-    subject,
-    html
-  };
-
-  try{
-    const info = await transporter.sendMail(mailOptions);
-    console.log('---------Email sent---------');
-    console.log(info);
-  } catch (error) {
-    console.log('---------Error in sendCertificationToRecipientEmail----------');
-    console.log(`Error : ${error}.`);
   }
 }
 
@@ -108,19 +64,11 @@ export const handleCreateCertification = async (req: Request, res: Response): Pr
       if (isEmailValid !== 'Valid email') {
         response.push({
           email: recipient.email,
-          certificationCreated: false,
+          isCertificationCreated: false,
           error: isEmailValid
         });
         continue;
       }
-
-      // const newCertification: Certification = new CertificationModel({
-      //   issuerId: project.issuerId,
-      //   recipientName: recipient.recepientName,
-      //   projectId,
-      // });
-
-      // const createdCertification = await newCertification.save();
 
       const oldRecipient = await RecipientModel.findOne({ email: recipient.email }).exec();
 
@@ -135,12 +83,10 @@ export const handleCreateCertification = async (req: Request, res: Response): Pr
   
         createdCertification = await newCertification.save();
 
-        // certificate = createdCertification;
-
         if (!await handleCreateRecipient(req, res, createdCertification._id, recipient.email)) {
           response.push({
             email: recipient.email,
-            certificationCreated: false,
+            isCertificationCreated: false,
             error: 'Error occurred while creating this recipient'
           });
           continue;
@@ -151,11 +97,9 @@ export const handleCreateCertification = async (req: Request, res: Response): Pr
         if (certification) {
           response.push({
             email: recipient.email,
-            certificationCreated: false,
+            isCertificationCreated: false,
             error: 'Recipient has already received a certificate in this project.'
           });
-
-          // await CertificationModel.findByIdAndDelete(createdCertification._id);
           continue;
         }
 
@@ -168,15 +112,11 @@ export const handleCreateCertification = async (req: Request, res: Response): Pr
   
         createdCertification = await newCertification.save();
 
-        // certificate = createdCertification;
-
         await RecipientModel.findByIdAndUpdate(
           oldRecipient._id,
           { $push: { achievedCertifications: createdCertification._id } },
           { new: true }
         ).exec();
-
-        // await CertificationModel.findByIdAndUpdate(createdCertification._id, { recipientId: recipient._id }, { new: true }).exec();
       }
 
       await ProjectModel.findByIdAndUpdate(
@@ -187,18 +127,13 @@ export const handleCreateCertification = async (req: Request, res: Response): Pr
 
       response.push({
         email: recipient?.email,
-        certificationCreated: true,
+        isCertificationCreated: true,
         certificationId: createdCertification.certificationId,
       });
+      
+      const certificateUrl = `http://${process.env.DOMAIL_IP}:5000/api/v2/certification/${createdCertification.certificationId}`;
 
-      sendCertificationToRecipientEmail(recipient.email, recipient.recipientName, (issuer?.companyName || issuer?.instituteName || issuer?.issuerName),  `http://${process.env.Domain_IP}:5000/api/v2/certification/${createdCertification.certificationId}`);
-
-      // const certificateUrl = `http://192.168.1.2:5000/api/v1/certificate/${createdCertification._id}`;
-
-      // const qrCodeFilePath = path.join(__dirname, `../public/qrcodes/${createdCertification._id}.png`);
-      // await QRCode.toFile(qrCodeFilePath, certificateUrl);
-      // const qrCode = await QRCode.toDataURL(certificateUrl);
-      // qrCodes.push(qrCode);
+      await mailer(recipient.email, recipient.recipientName, (issuer?.companyName || issuer?.instituteName || issuer?.issuerName), certificateUrl);
 
     }
 

@@ -80,12 +80,12 @@ export const handleGetPremadeTemplateById = async (req: Request, res: Response):
       return res.status(404).json({ error: 'Premade template not found' });
     }
 
-    // const components: Component[] = premadeTemplate.components;
-    // components.push(premadeTemplate.recipientName);
-    // components.push(premadeTemplate.qrCode);
+    const components: Component[] = premadeTemplate.components;
+    components.push(premadeTemplate.recipientName);
+    components.push(premadeTemplate.qrCode);
 
-    // return res.status(200).json(components);
-    return res.status(200).json(premadeTemplate);
+    return res.status(200).json(components);
+    // return res.status(200).json(premadeTemplate);
   } catch (error) {
     if (error instanceof mongoose.Error) {
       return res.status(400).json({ error: error.message });

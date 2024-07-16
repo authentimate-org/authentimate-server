@@ -189,7 +189,7 @@ export const handleGetAllModifiedTemplatesByIssuerId = async (req: Request, res:
   }
 };
 
-//Read One
+//Read One (not in use)
 export const handleGetModifiedTemplateByProjectId = async (req: Request, res: Response): Promise<Response> => {
   const { projectId } = req.body;
 
