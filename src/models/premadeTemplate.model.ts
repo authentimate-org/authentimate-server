@@ -62,11 +62,11 @@ const componentSchema = new Schema<Component>({
 const premadeTemplateSchema = new Schema<PremadeTemplate>({
     recipientName: {
         type: componentSchema,
-        required: false
+        required: true
     },
     qrCode: {
         type: componentSchema,
-        required: false
+        required: true
     },
     components: [componentSchema],
     templateImageURL: {

@@ -1,7 +1,5 @@
 import express from "express"
 const router = express.Router()
-import modifiedTemplateRoutes from "./modifiedTemplate.route"
-import certificationRoutes from "./certification.route"
 import { handleCreateProject, handleGetAllProjectsByIssuerId, handleGetProjectById, handleGetTemplateByProjectId, handleUpdateProjectById, handleDeleteProjectById } from '../../controllers/project.controller'
 
 
@@ -15,7 +13,7 @@ router
 .get(handleGetAllProjectsByIssuerId);
 
 router
-.route('/')
+.route('/get-project')
 .post(handleGetProjectById);
 
 router

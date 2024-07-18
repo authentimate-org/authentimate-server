@@ -9,7 +9,7 @@ export const handleCreatePremadeTemplate = async (req: Request, res: Response): 
   try {
     // const { imageURL } = req.body;
     const components = JSON.parse(req.body.design).design;
-    console.log(components);
+    // console.log(components);
     const imageURL = "https://commondatastorage.googleapis.com/codeskulptor-demos/riceracer_assets/img/car_4.png";
     let recipientName: Component | null = null;
     let qrCode: Component | null = null;
@@ -84,7 +84,7 @@ export const handleGetPremadeTemplateById = async (req: Request, res: Response):
     components.push(premadeTemplate.recipientName);
     components.push(premadeTemplate.qrCode);
 
-    return res.status(200).json(components);
+    return res.status(200).json({ components: components });
     // return res.status(200).json(premadeTemplate);
   } catch (error) {
     if (error instanceof mongoose.Error) {

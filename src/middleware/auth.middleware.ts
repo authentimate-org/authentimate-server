@@ -43,8 +43,10 @@ const routeChecks: { [key: string]: RouteCheck } = {
 
 async function authMiddleware(req: Request, res: Response, next: NextFunction) {
   const endPoint = req.originalUrl;
+  // console.log(endPoint);
 
   const routeCheck = routeChecks[endPoint] || routeChecks['default'];
+  // console.log(routeCheck);
 
   if(routeCheck.crossMiddleware) return next();
 

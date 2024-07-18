@@ -29,7 +29,7 @@ export const handleSaveModifiedTemplate = async (req: Request, res: Response): P
     }
 
     if (!projectId) {
-      projectId = "669010a4a1d102549f432e92";
+      projectId = "66979ab5e8393a333e0d6367";
     }
 
     if (!req.user || !req.issuerId) {
@@ -139,7 +139,7 @@ export const handleFinaliseTemplate = async (req: Request, res: Response): Promi
         projectId,
         issuerId: req.issuerId,
         recipientName: premadeTemplate?.recipientName,
-        qrcode: premadeTemplate?.qrCode,
+        qrCode: premadeTemplate?.qrCode,
         components: premadeTemplate?.components
       });
 
