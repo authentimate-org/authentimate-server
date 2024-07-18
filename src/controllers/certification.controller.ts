@@ -1,8 +1,8 @@
 import { Request, Response } from 'express';
 import mongoose from 'mongoose';
 import QRCode from 'qrcode';
-// import transporter from '../config/transporter';
 import mailer from '../utils/mailer';
+import checkBounceEmails from '../utils/bounceMailsHandler';
 import { emailValidator } from '../middleware/emailValidator.middleware';
 import { IssuerModel } from '../models/issuer.model'
 import { ProjectModel } from '../models/project.model';
@@ -17,7 +17,19 @@ interface Res {
   email: string | undefined;
   isCertificationCreated: boolean;
   certificationId?: string | undefined;
+  certificationUrl?: string;
+  status?: string
   error?: string
+}
+
+interface CertificationStatusResponse {
+  recipientName: string ;
+  recipientId: string;
+  recipientEmail?: string;
+  certificationId: string;
+  certificationUrl: string;
+  status: string;
+  error?: string;
 }
 
 async function generateQRCode(certificaionId: string): Promise<string> {
@@ -36,6 +48,7 @@ async function generateQRCode(certificaionId: string): Promise<string> {
 export const handleCreateCertification = async (req: Request, res: Response): Promise<Response> => {
   const { projectId, recipients } = req.body;
   const response: Res[] = [];
+  console.log(recipients);
 
   try {
     if (!req.user || !req.issuerId) {
@@ -59,6 +72,7 @@ export const handleCreateCertification = async (req: Request, res: Response): Pr
     }
 
     for (const recipient of recipients) {
+      console.log(`${recipient.recipientName}`);
       const isEmailValid = await emailValidator(recipient.email);
 
       if (isEmailValid !== 'Valid email') {
@@ -75,13 +89,15 @@ export const handleCreateCertification = async (req: Request, res: Response): Pr
       let createdCertification;
       
       if (!oldRecipient) {
+        // console.log('yes');
         const newCertification: Certification = new CertificationModel({
           issuerId: project.issuerId,
           recipientName: recipient.recipientName,
-          projectId,
+          projectId
         });
   
         createdCertification = await newCertification.save();
+        // console.log(createdCertification.recipientName);
 
         if (!await handleCreateRecipient(req, res, createdCertification._id, recipient.email)) {
           response.push({
@@ -92,7 +108,7 @@ export const handleCreateCertification = async (req: Request, res: Response): Pr
           continue;
         }
       } else {
-        const certification = await CertificationModel.findOne({ projectId, recipientId: recipient._id });
+        const certification = await CertificationModel.findOne({ projectId, recipientId: oldRecipient._id });
 
         if (certification) {
           response.push({
@@ -106,7 +122,7 @@ export const handleCreateCertification = async (req: Request, res: Response): Pr
         const newCertification: Certification = new CertificationModel({
           issuerId: project.issuerId,
           recipientId: oldRecipient._id,
-          recipientName: recipient.recepientName,
+          recipientName: recipient.recipientName,
           projectId,
         });
   
@@ -125,16 +141,25 @@ export const handleCreateCertification = async (req: Request, res: Response): Pr
         { new: true }
       ).exec();
 
+      const certificationUrl = `http://${process.env.DOMAIN_IP}:5000/api/v2/certification/${createdCertification.certificationId}`;
+
       response.push({
         email: recipient?.email,
         isCertificationCreated: true,
         certificationId: createdCertification.certificationId,
+        certificationUrl,
+        status: createdCertification.status
       });
-      
-      const certificateUrl = `http://${process.env.DOMAIL_IP}:5000/api/v2/certification/${createdCertification.certificationId}`;
+      await CertificationModel.findByIdAndUpdate(createdCertification._id, { status: 'SENDING_MAIL' }, { new: true }).exec();
 
-      await mailer(recipient.email, recipient.recipientName, (issuer?.companyName || issuer?.instituteName || issuer?.issuerName), certificateUrl);
-
+      mailer(recipient.email, recipient.recipientName, (issuer?.companyName || issuer?.instituteName || issuer?.issuerName), createdCertification.certificationId, certificationUrl)
+      .then(() => {
+        CertificationModel.findByIdAndUpdate(createdCertification._id, { status: 'MAIL_SENT' }, { new: true }).exec();
+        // checkBounceEmails();
+      })
+      .catch((error) => {
+        CertificationModel.findByIdAndUpdate(createdCertification._id, { status: 'MAIL_NOT_SENT' }, { new: true }).exec();
+      });
     }
 
     return res.status(200).json(response);
@@ -147,8 +172,8 @@ export const handleCreateCertification = async (req: Request, res: Response): Pr
   }
 };
 
-//Read All
-export const handleGetAllCertificationsByProjectId = async (req: Request, res: Response): Promise<Response> => {
+//Get Status
+export const handleGetStatusOfAllCertificationsByProjectId = async (req: Request, res: Response): Promise<Response> => {
   const { projectId } = req.body;
 
   try {
@@ -165,14 +190,32 @@ export const handleGetAllCertificationsByProjectId = async (req: Request, res: R
     if (project.issuerId.toString() !== req.issuerId) {
       return res.json({ error: 'Issuer not matched' });
     }
+
+    // await checkBounceEmails();
   
-    const allCertifications = await CertificationModel.find({projectId: projectId}).exec();
+    const allCertifications = await CertificationModel.find({ projectId: projectId }, 'recipientName recipientId status certificationId').exec();
   
-    if (!allCertifications) {
+    if (allCertifications.length == 0) {
       return res.status(404).json({ error: 'Certificates not found' });
     }
-  
-    return res.json(allCertifications);
+
+    const response: CertificationStatusResponse[] = [];
+    let recipient;
+
+    for(const certification of allCertifications) {
+      recipient = await RecipientModel.findById(certification.recipientId, 'email').exec();
+
+      response.push({
+        recipientName: certification.recipientName,
+        recipientId: certification.recipientId.toString(),
+        recipientEmail: recipient?.email,
+        certificationId: certification.certificationId,
+        certificationUrl: `http://${process.env.DOMAIN_IP}/api/v1/certification/${certification.certificationId}`,
+        status: certification.status
+      });
+    }
+
+    return res.status(200).json(response);
   } catch (error) {
     if (error instanceof mongoose.Error) {
       return res.status(400).json({ error: error.message });

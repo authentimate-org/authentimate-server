@@ -7,6 +7,7 @@ interface Certification extends Document{
     recipientName: string;
     projectId: mongoose.Types.ObjectId;
     certificationId: string;
+    status: 'CERTIFICATION_CREATED' | 'SENDING_MAIL' | 'MAIL_SENT' | 'MAIL_NOT_SENT' | 'MAIL_NOT_DELIVERED';
 }
 
 const certificationSchema = new Schema<Certification>({
@@ -32,6 +33,12 @@ const certificationSchema = new Schema<Certification>({
         type: String,
         default: () => uuidv4(),
         unique: true
+    },
+    status: {
+        type: String,
+        enum: ['CERTIFICATION_CREATED', 'SENDING_MAIL', 'MAIL_SENT' , 'MAIL_NOT_SENT', 'MAIL_NOT_DELIVERED'],
+        default: 'CERTIFICATION_CREATED',
+        required: true,
     }
 },
 { timestamps: true }

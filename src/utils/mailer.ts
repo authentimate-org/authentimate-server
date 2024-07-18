@@ -1,7 +1,8 @@
-import transporter from '../config/transporter';
+import transporter, { nodemailer } from '../config/transporter';
 
-const mailer = async function (recipientEmail: string, recipientName: string, issuerName: string | undefined, certificateUrl: string) {
+const mailer = async function (recipientEmail: string, recipientName: string, issuerName: string | undefined, certificationId: string, certificationUrl: string) {
     const subject = 'Your Certificate of Achievement';
+    const text = certificationId;
     const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
       <h2 style="text-align: center; color: #333;">Congratulations, ${recipientName}!</h2>
@@ -12,7 +13,7 @@ const mailer = async function (recipientEmail: string, recipientName: string, is
         Please find your certificate by clicking on the link below:
       </p>
       <div style="text-align: center; margin: 20px 0;">
-        <a href="${certificateUrl}" style="background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
+        <a href="${certificationUrl}" style="background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
           View Your Certificate
         </a>
       </div>
@@ -31,16 +32,19 @@ const mailer = async function (recipientEmail: string, recipientName: string, is
       from: process.env.AUTHENTIMATE_OFFICIAL_EMAIL,
       to: recipientEmail,
       subject,
+      text,
       html
     };
   
-    try{
+    try {
       const info = await transporter.sendMail(mailOptions);
       console.log('---------Email sent---------');
-      // console.log(info);
-    } catch (error) {
+      console.log(`Message ID: ${info.messageId}`);
+      console.log(`Preview URL: ${nodemailer.getTestMessageUrl(info)}`);
+      console.log('Response:', info.response);
+    } catch (error: any) {
       console.log('---------Error in sendCertificationToRecipientEmail----------');
-      console.log(`Error : ${error}.`);
+      console.log(`Error: ${error.message}`);
     }
 };
 
