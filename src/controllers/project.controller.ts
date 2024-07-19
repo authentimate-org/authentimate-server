@@ -65,9 +65,9 @@ export const handleGetAllProjectsByIssuerId = async (req: Request, res: Response
       return res.status(401).json({ error: 'Unauthorized (user not found)' });
     }
   
-    const allProjects = await ProjectModel.find({issuerId: req.issuerId}).exec();
+    const allProjects = await ProjectModel.find({ issuerId: req.issuerId }, '_id projectName category stage').exec();
   
-    if (!allProjects) {
+    if (allProjects.length === 0) {
       return res.status(404).json({ error: 'Projects not found' });
     }
   
