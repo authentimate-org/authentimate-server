@@ -65,6 +65,7 @@ async function authMiddleware(req: Request, res: Response, next: NextFunction) {
   try {
     const decodedToken = await verifyToken(idToken);
     req.user = decodedToken;
+    console.log(`------decoded--------UID: ${req.user.uid}`);
 
     if (routeCheck.checkEmailVerified) {
       const userRecord = await admin.auth().getUser(req.user.uid);
@@ -72,6 +73,7 @@ async function authMiddleware(req: Request, res: Response, next: NextFunction) {
         return res.status(401).json({ error: 'Unauthorised (email not verified)' });
       }
     }
+    console.log("------emailChecked--------");
 
     const issuer = await IssuerModel.findOne({ firebaseUid: decodedToken.uid }).exec() as Issuer;
 

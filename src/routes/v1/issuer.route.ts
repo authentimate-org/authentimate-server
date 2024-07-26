@@ -1,6 +1,6 @@
 import express from "express"
 const router = express.Router()
-import emailValidatorMiddleware from '../../middleware/emailValidator.middleware'
+import emailValidatorMiddleware from '../../middlewares/emailValidator.middleware'
 import { handleSignUp, handleSignIn, handleGetIssuerById, handleUpdateIssuerById, handleCheckOnboardingStatus, handleDoOnboarding, handleDeleteIssuerById } from "../../controllers/issuer.controller"
 
 

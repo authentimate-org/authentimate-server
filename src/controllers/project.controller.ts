@@ -134,6 +134,16 @@ export const handleGetProjectById = async (req: Request, res: Response): Promise
       response.components = premadeTemplate.components;
       response.components.push(premadeTemplate.recipientName);
       response.components.push(premadeTemplate.qrCode);
+    } else if (project.stage === 'TEMPLATE_FINALISED') {
+      const modifiedTemplate = await ModifiedTemplateModel.findById(project.modifiedTemplateId);
+
+      if (!modifiedTemplate) {
+        return res.status(404).json({ error: 'Modified template not found.' });
+      }
+  
+      response.components = modifiedTemplate.components;
+      response.components.push(modifiedTemplate.recipientName);
+      response.components.push(modifiedTemplate.qrCode);
     } else {
       
     }

@@ -6,9 +6,9 @@ import cors from 'cors';
 import bodyParser from 'body-parser';
 import connectDB from './config/db';
 import v1Routes from './routes/v1/index';
-import errorHandlerMiddleware from './middleware/errorHandler.middleware';
-import notFoundMiddleware from './middleware/notFound.middleware';
-import authMiddleware from './middleware/auth.middleware';
+import errorHandlerMiddleware from './middlewares/errorHandler.middleware';
+import notFoundMiddleware from './middlewares/notFound.middleware';
+import authMiddleware from './middlewares/auth.middleware';
 import { handleGetCertificationById } from './controllers/certification.controller';
 
 

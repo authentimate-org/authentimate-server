@@ -2,8 +2,8 @@ import { Request, Response } from 'express';
 import mongoose from 'mongoose';
 import QRCode from 'qrcode';
 import mailer from '../utils/mailer';
-import checkBounceEmails from '../utils/bounceMailsHandler';
-import { emailValidator } from '../middleware/emailValidator.middleware';
+// import checkBounceEmails from '../utils/bounceMailsHandler';
+import { emailValidator } from '../middlewares/emailValidator.middleware';
 import { IssuerModel } from '../models/issuer.model'
 import { ProjectModel } from '../models/project.model';
 import { RecipientModel } from '../models/recipient.model';
