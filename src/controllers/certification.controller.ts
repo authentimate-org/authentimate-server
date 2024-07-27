@@ -48,7 +48,7 @@ async function generateQRCode(certificaionId: string): Promise<string> {
 export const handleCreateCertification = async (req: Request, res: Response): Promise<Response> => {
   const { projectId, recipients } = req.body;
   const response: Res[] = [];
-  console.log(recipients);
+  // console.log(recipients);
 
   try {
     if (!req.user || !req.issuerId) {
@@ -72,7 +72,7 @@ export const handleCreateCertification = async (req: Request, res: Response): Pr
     }
 
     for (const recipient of recipients) {
-      console.log(`${recipient.recipientName}`);
+      // console.log(`${recipient.recipientName}`);
       const isEmailValid = await emailValidator(recipient.email);
 
       if (isEmailValid !== 'Valid email') {
@@ -135,9 +135,9 @@ export const handleCreateCertification = async (req: Request, res: Response): Pr
         ).exec();
       }
 
-      await ProjectModel.findByIdAndUpdate(
+      ProjectModel.findByIdAndUpdate(
         projectId,
-        { $push: { issuedCertificates: createdCertification._id }, stage: 'ISSUED' },
+        { $push: { issuedCertificates: createdCertification._id }, stage: 'CERTIFICATION_CREATED' },
         { new: true }
       ).exec();
 
@@ -155,6 +155,7 @@ export const handleCreateCertification = async (req: Request, res: Response): Pr
       mailer(recipient.email, recipient.recipientName, (issuer?.companyName || issuer?.instituteName || issuer?.issuerName), createdCertification.certificationId, certificationUrl)
       .then(() => {
         CertificationModel.findByIdAndUpdate(createdCertification._id, { status: 'MAIL_SENT' }, { new: true }).exec();
+        ProjectModel.findByIdAndUpdate(projectId, { stage: 'MAIL_SENT' }, { new: true }).exec();
         // checkBounceEmails();
       })
       .catch((error) => {
@@ -215,7 +216,7 @@ export const handleGetStatusOfAllCertificationsByProjectId = async (req: Request
       });
     }
 
-    return res.status(200).json(response);
+    return res.status(200).json({ stage: project.stage, data: response });
   } catch (error) {
     if (error instanceof mongoose.Error) {
       return res.status(400).json({ error: error.message });

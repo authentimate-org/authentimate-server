@@ -7,7 +7,7 @@ interface Project extends Document {
   templateId?: mongoose.Types.ObjectId;
   modifiedTemplateId?: mongoose.Types.ObjectId;
   issuedCertificates: mongoose.Types.ObjectId[];
-  stage: 'PROJECT_CREATED' | 'TEMPLATE_SELECTED' | 'TEMPLATE_FINALISED' | 'ISSUED';
+  stage: 'PROJECT_CREATED' | 'TEMPLATE_SELECTED' | 'TEMPLATE_FINALISED' | 'CERTIFICATION_CREATED' | 'MAIL_SENT';
 }
 
 const projectSchema = new Schema<Project>({
@@ -40,7 +40,7 @@ const projectSchema = new Schema<Project>({
   }],
   stage: {
     type: String,
-    enum: ["PROJECT_CREATED", "TEMPLATE_SELECTED", "TEMPLATE_FINALISED", "ISSUED"],
+    enum: ["PROJECT_CREATED", "TEMPLATE_SELECTED", "TEMPLATE_FINALISED", "CERTIFICATION_CREATED", "MAIL_SENT"],
     default: "PROJECT_CREATED",
     required: true
   }
