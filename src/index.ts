@@ -32,7 +32,8 @@ app.use(express.urlencoded({ extended: true }));
 
 app.route('/').get((req: Request, res: Response) => { res.send('Welcome to Authentimate.') });
 app.use('/api/v1', authMiddleware, v1Routes);
-app.use('/api/v2/certification/:certificationId', handleGetCertificationById);
+
+// app.use('/api/v2/certification/:certificationId', handleGetCertificationById);
 
 app.use(notFoundMiddleware);
 app.use(errorHandlerMiddleware);

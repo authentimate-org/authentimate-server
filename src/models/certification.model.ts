@@ -8,6 +8,7 @@ interface Certification extends Document{
     projectId: mongoose.Types.ObjectId;
     certificationId: string;
     status: 'CERTIFICATION_CREATED' | 'SENDING_MAIL' | 'MAIL_SENT' | 'MAIL_NOT_SENT' | 'MAIL_NOT_DELIVERED';
+    createdAt:Date;
 }
 
 const certificationSchema = new Schema<Certification>({

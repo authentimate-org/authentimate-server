@@ -7,7 +7,7 @@ interface Project extends Document {
   templateId?: mongoose.Types.ObjectId;
   modifiedTemplateId?: mongoose.Types.ObjectId;
   issuedCertificates: mongoose.Types.ObjectId[];
-  stage: 'PROJECT_CREATED' | 'TEMPLATE_SELECTED' | 'TEMPLATE_FINALISED' | 'CERTIFICATION_CREATED' | 'MAIL_SENT';
+  stage: 'PROJECT_CREATED' | 'TEMPLATE_SELECTED' | 'TEMPLATE_FINALISED' | 'CERTIFICATION_CREATED' | 'MAIL_SENT' | 'MAIN_NOT_SENT';
 }
 
 const projectSchema = new Schema<Project>({

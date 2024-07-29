@@ -14,7 +14,8 @@ import { handleCreateRecipient } from './recipient.controller';
 
 
 interface Res {
-  email: string | undefined;
+  recipientName:string;
+  recipientEmail: string | undefined;
   isCertificationCreated: boolean;
   certificationId?: string | undefined;
   certificationUrl?: string;
@@ -32,9 +33,9 @@ interface CertificationStatusResponse {
   error?: string;
 }
 
-async function generateQRCode(certificaionId: string): Promise<string> {
+async function generateQRCode(certificationId: string): Promise<string> {
   try {
-    const certificateUrl = `http://${process.env.DOMAIN_IP}:5000/api/v2/certification/${certificaionId}`;
+    const certificateUrl = `${process.env.CLIENT_BASE_URL}/verification/${certificationId}`;
     const qrCode = await QRCode.toDataURL(certificateUrl);
 
     return qrCode;
@@ -44,11 +45,10 @@ async function generateQRCode(certificaionId: string): Promise<string> {
   }
 }
 
-//Create
+// Create
 export const handleCreateCertification = async (req: Request, res: Response): Promise<Response> => {
   const { projectId, recipients } = req.body;
   const response: Res[] = [];
-  // console.log(recipients);
 
   try {
     if (!req.user || !req.issuerId) {
@@ -72,36 +72,34 @@ export const handleCreateCertification = async (req: Request, res: Response): Pr
     }
 
     for (const recipient of recipients) {
-      // console.log(`${recipient.recipientName}`);
-      const isEmailValid = await emailValidator(recipient.email);
+      const isEmailValid = await emailValidator(recipient.recipientEmail);
 
       if (isEmailValid !== 'Valid email') {
         response.push({
-          email: recipient.email,
+          recipientName:recipient.recipientName,
+          recipientEmail: recipient.recipientEmail,
           isCertificationCreated: false,
           error: isEmailValid
         });
         continue;
       }
 
-      const oldRecipient = await RecipientModel.findOne({ email: recipient.email }).exec();
-
+      const oldRecipient = await RecipientModel.findOne({ email: recipient.recipientEmail }).exec();
       let createdCertification;
-      
+
       if (!oldRecipient) {
-        // console.log('yes');
         const newCertification: Certification = new CertificationModel({
           issuerId: project.issuerId,
           recipientName: recipient.recipientName,
           projectId
         });
-  
-        createdCertification = await newCertification.save();
-        // console.log(createdCertification.recipientName);
 
-        if (!await handleCreateRecipient(req, res, createdCertification._id, recipient.email)) {
+        createdCertification = await newCertification.save();
+
+        if (!await handleCreateRecipient(req, res, createdCertification._id, recipient.recipientEmail)) {
           response.push({
-            email: recipient.email,
+            recipientName:recipient.recipientName,
+            recipientEmail: recipient.recipientEmail,
             isCertificationCreated: false,
             error: 'Error occurred while creating this recipient'
           });
@@ -112,7 +110,8 @@ export const handleCreateCertification = async (req: Request, res: Response): Pr
 
         if (certification) {
           response.push({
-            email: recipient.email,
+            recipientName:recipient.recipientName,
+            recipientEmail: recipient.recipientEmail,
             isCertificationCreated: false,
             error: 'Recipient has already received a certificate in this project.'
           });
@@ -125,7 +124,7 @@ export const handleCreateCertification = async (req: Request, res: Response): Pr
           recipientName: recipient.recipientName,
           projectId,
         });
-  
+
         createdCertification = await newCertification.save();
 
         await RecipientModel.findByIdAndUpdate(
@@ -135,31 +134,34 @@ export const handleCreateCertification = async (req: Request, res: Response): Pr
         ).exec();
       }
 
-      ProjectModel.findByIdAndUpdate(
+      await ProjectModel.findByIdAndUpdate(
         projectId,
         { $push: { issuedCertificates: createdCertification._id }, stage: 'CERTIFICATION_CREATED' },
         { new: true }
       ).exec();
 
-      const certificationUrl = `http://${process.env.DOMAIN_IP}:5000/api/v2/certification/${createdCertification.certificationId}`;
+      const certificationUrl = `${process.env.CLIENT_BASE_URL}/verification/${createdCertification.certificationId}`;
 
       response.push({
-        email: recipient?.email,
+        recipientName:recipient?.recipientName,
+        recipientEmail: recipient?.recipientEmail,
         isCertificationCreated: true,
         certificationId: createdCertification.certificationId,
         certificationUrl,
         status: createdCertification.status
       });
-      await CertificationModel.findByIdAndUpdate(createdCertification._id, { status: 'SENDING_MAIL' }, { new: true }).exec();
 
-      mailer(recipient.email, recipient.recipientName, (issuer?.companyName || issuer?.instituteName || issuer?.issuerName), createdCertification.certificationId, certificationUrl)
-      .then(() => {
-        CertificationModel.findByIdAndUpdate(createdCertification._id, { status: 'MAIL_SENT' }, { new: true }).exec();
-        ProjectModel.findByIdAndUpdate(projectId, { stage: 'MAIL_SENT' }, { new: true }).exec();
-        // checkBounceEmails();
-      })
-      .catch((error) => {
-        CertificationModel.findByIdAndUpdate(createdCertification._id, { status: 'MAIL_NOT_SENT' }, { new: true }).exec();
+      setImmediate(async () => {
+        await CertificationModel.findByIdAndUpdate(createdCertification._id, { status: 'SENDING_MAIL' }, { new: true }).exec();
+
+        const mailResult = await mailer(recipient.recipientEmail, recipient.recipientName, (issuer?.companyName || issuer?.instituteName || issuer?.issuerName), createdCertification.certificationId, certificationUrl);
+
+        if (mailResult.success) {
+          await CertificationModel.findByIdAndUpdate(createdCertification._id, { status: 'MAIL_SENT' }, { new: true }).exec();
+          await ProjectModel.findByIdAndUpdate(projectId, { stage: 'MAIL_SENT' }, { new: true }).exec();
+        } else {
+          await CertificationModel.findByIdAndUpdate(createdCertification._id, { status: 'MAIL_NOT_SENT' }, { new: true }).exec();
+        }
       });
     }
 
@@ -211,7 +213,7 @@ export const handleGetStatusOfAllCertificationsByProjectId = async (req: Request
         recipientId: certification.recipientId.toString(),
         recipientEmail: recipient?.email,
         certificationId: certification.certificationId,
-        certificationUrl: `http://${process.env.DOMAIN_IP}/api/v1/certification/${certification.certificationId}`,
+        certificationUrl: `${process.env.CLIENT_BASE_URL}/verification/${certification.certificationId}`,
         status: certification.status
       });
     }
@@ -254,23 +256,33 @@ export const handleGetCertificationById = async (req: Request, res: Response): P
     components.push(modifiedTemplate.recipientName);
     components.push(modifiedTemplate.qrCode);
 
-    const response =  {
-      "Issuer's details": {
-        "Issued by": issuer.companyName || issuer.instituteName || issuer.issuerName,
-        "Category": issuer.category,
-        "Business mail": issuer.businessMail,
-        "Designation": issuer.designation,
-        "Address": issuer.address
-      },
-      "Recipient's details": {
-        "Recipient name": certification.recipientName,
-        "Email address": recipient.email
-      },
-      "Project's details": {
-        "Project name": project.projectName,
-        "Category": project.category
-      },
-      "Date of issue": certification.createdAt,
+    // const response =  {
+    //   "Issuer's details": {
+    //     "Issued by": issuer.companyName || issuer.instituteName || issuer.issuerName,
+    //     "Category": issuer.category,
+    //     "Business mail": issuer.businessMail,
+    //     "Designation": issuer.designation,
+    //     "Address": issuer.address
+    //   },
+    //   "Recipient's details": {
+    //     "Recipient name": certification.recipientName,
+    //     "Email address": recipient.email
+    //   },
+    //   "Project's details": {
+    //     "Project name": project.projectName,
+    //     "Category": project.category
+    //   },
+    //   "Date of issue": certification.createdAt,
+    //   components
+    // }
+    const response={
+      issuedBy:issuer.companyName || issuer.instituteName || issuer.issuerName,
+      issuerEmail:issuer.businessMail,
+      recipientName:certification.recipientName,
+      recipientEmail:recipient.email,
+      projectName:project.projectName,
+      projectCategory:project.category,
+      dateOfIssue:certification.createdAt,
       components
     }
 
