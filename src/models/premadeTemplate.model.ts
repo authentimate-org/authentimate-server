@@ -13,6 +13,8 @@ interface Component {
     height?: number;
     padding?: number;
     font?: string;
+    fontFamily?: string;
+    lineHeight?: number;
     title?: string;
     weight?: number;
     color?: string;
@@ -52,6 +54,8 @@ const componentSchema = new Schema<Component>({
     height: Number,
     padding: Number,
     font: String,
+    fontFamily: String,
+    lineHeight: Number,
     title: String,
     weight: Number,
     color: String,

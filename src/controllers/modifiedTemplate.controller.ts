@@ -28,9 +28,9 @@ export const handleSaveModifiedTemplate = async (req: Request, res: Response): P
       else break; //Need optimization
     }
 
-    if (!projectId) {
-      projectId = "66979ab5e8393a333e0d6367";
-    }
+    // if (!projectId) {
+    //   projectId = "66979ab5e8393a333e0d6367";
+    // }
 
     if (!req.user || !req.issuerId) {
       return res.status(401).json({ error: 'Unauthorised (user not found)' });
@@ -52,7 +52,7 @@ export const handleSaveModifiedTemplate = async (req: Request, res: Response): P
 
     if (project.stage === 'PROJECT_CREATED') {
       return res.status(404).json({ error: 'Premade template not found.' });
-    } else if (project.stage === 'TEMPLATE_SELECTED' && project.modifiedTemplateId) {
+    } else if ((project.stage === 'TEMPLATE_SELECTED' && project.modifiedTemplateId) || (project.stage === 'TEMPLATE_FINALISED')) {
       const updatedModifiedTemplate = await ModifiedTemplateModel.findByIdAndUpdate(
         project.modifiedTemplateId,
         { recipientName,
@@ -152,8 +152,10 @@ export const handleFinaliseTemplate = async (req: Request, res: Response): Promi
       ).exec();
 
       return res.status(200).json({ message: "Template finalised successfully." });
-    } else {
+    } else if (project.stage === 'CERTIFICATION_CREATED' || project.stage === 'MAIL_SENT' || project.stage === 'MAIL_NOT_SENT') {
       return res.status(400).json({ error: "You can't finalise the template at this stage." });
+    } else {
+      return res.status(400).json({ error: "A modified template for this project has already been finalized." }); 
     }
 
   } catch (error) {

@@ -14,7 +14,7 @@ interface ProjectResponse {
   category: 'EVENT' | 'COURSE' | 'COMPETITION';
   templateId: string | null;
   modifiedTemplateId: string | null;
-  stage: 'PROJECT_CREATED' | 'TEMPLATE_SELECTED' | 'TEMPLATE_FINALISED' | 'CERTIFICATION_CREATED' | 'MAIL_SENT';
+  stage: 'PROJECT_CREATED' | 'TEMPLATE_SELECTED' | 'TEMPLATE_FINALISED' | 'CERTIFICATION_CREATED' | 'MAIL_SENT' | 'MAIL_NOT_SENT';
   components?: Component[];
 }
 
@@ -64,14 +64,15 @@ export const handleGetAllProjectsByIssuerId = async (req: Request, res: Response
     if (!req.user || !req.issuerId) {
       return res.status(401).json({ error: 'Unauthorized (user not found)' });
     }
-  
+
     const allProjects = await ProjectModel.find({ issuerId: req.issuerId }, '_id projectName category stage').exec();
+    const issuer = await IssuerModel.findById(req.issuerId, 'totalCertifications').exec();
   
     if (allProjects.length === 0) {
       return res.status(404).json({ error: 'Projects not found' });
     }
   
-    return res.status(200).json(allProjects);
+    return res.status(200).json({ projects: allProjects, totalCertifications: issuer?.totalCertifications });
   } catch (error) {
     if (error instanceof mongoose.Error) {
       return res.status(400).json({ error: error.message });

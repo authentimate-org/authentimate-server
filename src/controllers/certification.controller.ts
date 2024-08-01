@@ -136,8 +136,13 @@ export const handleCreateCertification = async (req: Request, res: Response): Pr
 
       await ProjectModel.findByIdAndUpdate(
         projectId,
-        { $push: { issuedCertificates: createdCertification._id }, stage: 'CERTIFICATION_CREATED' },
+        { $push: { issuedCertifications: createdCertification._id }, stage: 'CERTIFICATION_CREATED' },
         { new: true }
+      ).exec();
+
+      await IssuerModel.findByIdAndUpdate(
+        req.issuerId,
+        { $inc: { totalCertifications: 1 } }
       ).exec();
 
       const certificationUrl = `${process.env.CLIENT_BASE_URL}/verification/${createdCertification.certificationId}`;
@@ -241,7 +246,7 @@ export const handleGetCertificationById = async (req: Request, res: Response): P
     
     const project = await ProjectModel.findById(certification?.projectId).exec();
 
-    const modifiedTemplate = await ModifiedTemplateModel.findById(project?.modifiedTemplateId);
+    const modifiedTemplate = await ModifiedTemplateModel.findById(project?.modifiedTemplateId).exec();
 
     const qrCode = await generateQRCode(certificationId);
 
@@ -250,7 +255,7 @@ export const handleGetCertificationById = async (req: Request, res: Response): P
     }
 
     modifiedTemplate.recipientName.title = certification.recipientName;
-    modifiedTemplate.qrCode.image = qrCode;
+    // modifiedTemplate.qrCode.image = qrCode;
 
     const components: Component[] = modifiedTemplate.components;
     components.push(modifiedTemplate.recipientName);
