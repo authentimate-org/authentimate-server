@@ -26,13 +26,8 @@ if (process.env.NODE_ENV === 'development') {
 app.use(helmet());
 app.use(cors());
 app.use(express.json());
-<<<<<<< HEAD
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
-=======
 // app.use(bodyParser.json());
 // app.use(bodyParser.urlencoded({ extended: true }));
->>>>>>> ca951bc7e4f94ba080876c9da1d6c790a8817e73
 app.use(express.urlencoded({ extended: true }));
 
 app.route('/').get((req: Request, res: Response) => { res.send('Welcome to Authentimate.') });
