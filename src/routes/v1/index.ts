@@ -1,17 +1,27 @@
 import express from 'express'
 const router = express.Router()
-import authMiddleware from '../../middleware/auth.middleware'
 import issuerRoutes from './issuer.route'
 import projectRoutes from './project.route'
 import premadeTemplateRoutes from "./premadeTemplate.route"
 import modifiedTemplateRoutes from "./modifiedTemplate.route"
 import certificationRoutes from "./certification.route"
+<<<<<<< HEAD
 import imageRoutes from "./imageRoutes.route"
+=======
+
+>>>>>>> ca951bc7e4f94ba080876c9da1d6c790a8817e73
 
 
 router.use('/issuer', issuerRoutes);
 
-router.use('/project', authMiddleware, projectRoutes);
+router.use('/project', projectRoutes);
+
+router.use('/premadeTemplate', premadeTemplateRoutes);
+
+router.use('/modifiedTemplate', modifiedTemplateRoutes);
+
+router.use('/certification', certificationRoutes);
+
 
 router.use('/premadeTemplate', authMiddleware, premadeTemplateRoutes);
 

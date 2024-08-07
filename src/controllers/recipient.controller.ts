@@ -4,12 +4,21 @@ import { RecipientModel, Recipient } from '../models/recipient.model';
 import { CertificationModel, Certification } from '../models/certification.model';
 
 //Create
+<<<<<<< HEAD
 export const handleCreateRecipient = async ( req: Request, res: Response, certificationId: mongoose.Schema.Types.ObjectId | unknown, recipient: object ): Promise<boolean> => {
   try {
     const newRecipient: Recipient = new RecipientModel(recipient);
 
     const createdRecipient = new RecipientModel(newRecipient);
     await createdRecipient.save();
+=======
+export const handleCreateRecipient = async ( req: Request, res: Response, certificationId: mongoose.Schema.Types.ObjectId | unknown, email: string ): Promise<boolean> => {
+  try {
+    const newRecipient: Recipient = new RecipientModel({ email, achievedCertifications: [ certificationId ] });
+
+    const createdRecipient = await newRecipient.save();
+    // await createdRecipient.save();
+>>>>>>> ca951bc7e4f94ba080876c9da1d6c790a8817e73
 
     if (!createdRecipient) {
       await CertificationModel.findByIdAndDelete(certificationId);
@@ -22,14 +31,24 @@ export const handleCreateRecipient = async ( req: Request, res: Response, certif
       { new: true }
     ).exec();
 
+<<<<<<< HEAD
     await RecipientModel.findByIdAndUpdate(
       createdRecipient._id,
       { $push: { achievedCertifications: certificationId } },
       { new: true }
     ).exec();
+=======
+    // await RecipientModel.findByIdAndUpdate(
+    //   createdRecipient._id,
+    //   { $push: { achievedCertifications: certificationId } },
+    //   { new: true }
+    // ).exec();
+>>>>>>> ca951bc7e4f94ba080876c9da1d6c790a8817e73
 
     return true;
   } catch (error) {
+    await CertificationModel.findByIdAndDelete(certificationId);
+    
     if (error instanceof mongoose.Error) {
       res.status(400).json({ error: error.message });
       return false;

@@ -4,6 +4,7 @@ import admin from '../config/firebase-admin';
 import firebaseApp from '../config/firebase-client';
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification, User as FirebaseUser } from 'firebase/auth';
 import { IssuerModel, Issuer } from '../models/issuer.model'
+<<<<<<< HEAD
 
 
 const auth = getAuth(firebaseApp);
@@ -46,10 +47,50 @@ export const handleSignUp = async (req: Request, res: Response): Promise<Respons
     const user = userCredential.user as FirebaseUser;
 
     // const user = await admin.auth().getUser(user.uid);
+=======
+
+
+
+const auth = getAuth(firebaseApp);
+
+async function signInWithCustomToken(customToken: string): Promise<string> {
+  try {
+    const response = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key=${process.env.VITE_FIREBASE_API_KEY}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: customToken, returnSecureToken: true })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error.message);
+    }
+
+    return data.idToken;
+  } catch (error) {
+    console.log('--------Error in signInWithCustomToken---------');
+    throw error;
+  }
+}
+
+//SignUp
+export const handleSignUp = async (req: Request, res: Response): Promise<Response> => {
+  const { email, password } = req.body;
+
+  try {
+    if (!password) {
+      return res.status(400).json({ error: 'Password is required' });
+    }
+
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    const user = userCredential.user as FirebaseUser;
+>>>>>>> ca951bc7e4f94ba080876c9da1d6c790a8817e73
     
     if (!user) {
       return res.status(400).json({ error: "Couldn't create user on fireabse." })
     }
+<<<<<<< HEAD
     console.log(userCredential);
     console.log("-------------------------------------------");
     console.log(user);
@@ -60,6 +101,15 @@ export const handleSignUp = async (req: Request, res: Response): Promise<Respons
     if (!customToken || !idToken) {
       await admin.auth().deleteUser(user.uid);
       return res.json({ error: "Couldn't create token." });
+=======
+
+    const customToken = await admin.auth().createCustomToken(user.uid);
+    // const idToken = await signInWithCustomToken(customToken);
+
+    if (!customToken) {
+      await admin.auth().deleteUser(user.uid);
+      return res.status(400).json({ error: "Couldn't create token." });
+>>>>>>> ca951bc7e4f94ba080876c9da1d6c790a8817e73
     }
  
     const newIssuer: Issuer = new IssuerModel({
@@ -71,11 +121,16 @@ export const handleSignUp = async (req: Request, res: Response): Promise<Respons
 
     if (!createdIssuer) {
       await admin.auth().deleteUser(user.uid);
+<<<<<<< HEAD
       return res.json({ error: "Couldn't create issuer on MongoDB." });
+=======
+      return res.status(400).json({ error: "Couldn't create issuer on MongoDB." });
+>>>>>>> ca951bc7e4f94ba080876c9da1d6c790a8817e73
     }
 
     await sendEmailVerification(user);
 
+<<<<<<< HEAD
     // const userCredential = await createUserWithEmailAndPassword(auth, email, password);
 
     // console.log(userCredential);
@@ -83,6 +138,9 @@ export const handleSignUp = async (req: Request, res: Response): Promise<Respons
     // await sendEmailVerification(userCredential.user);
 
     return res.status(201).json({ messsage: "Sign-up successful. Verification email sent.", token: idToken });
+=======
+    return res.status(201).json({ messsage: "Sign-up successful. Verification email sent.", token: customToken });
+>>>>>>> ca951bc7e4f94ba080876c9da1d6c790a8817e73
   } catch (error: any) {
     if (error.code) {
       switch (error.code) {
@@ -117,12 +175,17 @@ export const handleSignIn = async (req: Request, res: Response): Promise<Respons
     const issuer = await IssuerModel.findOne({ businessMail: email }).exec();
 
     if(!issuer) {
+<<<<<<< HEAD
       return res.status(400).json({ error: 'Issuer not found.' });
+=======
+      return res.status(404).json({ error: 'Issuer not found.' });
+>>>>>>> ca951bc7e4f94ba080876c9da1d6c790a8817e73
     }
 
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
     const token = await userCredential.user?.getIdToken();
 
+<<<<<<< HEAD
     let message_1, message_2;
 
     if(!userCredential.user.emailVerified) {
@@ -133,6 +196,18 @@ export const handleSignIn = async (req: Request, res: Response): Promise<Respons
     } else message_2 = "Sign-in successful.";
 
     return res.status(200).json({ message_1, message_2, token });
+=======
+    let message;
+
+    if(!userCredential.user.emailVerified) {
+      await sendEmailVerification(userCredential.user);
+      message = "Email not verified. Verification email sent.";
+    } else if(!issuer.onboarding) {
+      message = "You haven't done onboarding.";
+    } else message = "Sign-in successful.";
+
+    return res.status(200).json({ message, token });
+>>>>>>> ca951bc7e4f94ba080876c9da1d6c790a8817e73
   } catch (error: any) {
     if (error.code) {
       return res.status(400).json({error: error.code});
@@ -161,7 +236,11 @@ export const handleGetIssuerById = async (req: Request, res: Response): Promise<
       return res.status(404).json({ error: 'Issuer not found' });
     }
 
+<<<<<<< HEAD
     return res.json(issuer);
+=======
+    return res.status(200).json(issuer);
+>>>>>>> ca951bc7e4f94ba080876c9da1d6c790a8817e73
   } catch (error) {
     if (error instanceof mongoose.Error) {
       return res.status(400).json({ error: error.message });
@@ -196,7 +275,11 @@ export const handleUpdateIssuerById = async (req: Request, res: Response): Promi
       return res.status(404).json({ error: 'Issuer not found' });
     }
 
+<<<<<<< HEAD
     return res.json(updatedIssuer);
+=======
+    return res.status(200).json(updatedIssuer);
+>>>>>>> ca951bc7e4f94ba080876c9da1d6c790a8817e73
   } catch (error) {
     if (error instanceof mongoose.Error) {
       return res.status(400).json({ error: error.message });
@@ -223,7 +306,11 @@ export const handleCheckOnboardingStatus = async (req: Request, res: Response): 
       return res.status(404).json({ error: 'Issuer not found' });
     }
 
+<<<<<<< HEAD
     return res.json({ status: issuer.onboarding });
+=======
+    return res.status(200).json({ status: issuer.onboarding });
+>>>>>>> ca951bc7e4f94ba080876c9da1d6c790a8817e73
   } catch (error) {
     if (error instanceof mongoose.Error) {
       return res.status(400).json({ error: error.message });
@@ -246,8 +333,29 @@ export const handleDoOnboarding = async (req: Request, res: Response): Promise<R
       return res.status(400).json({ error: 'Invalid Issuer ID' });
     }
 
+<<<<<<< HEAD
     if (!(category && ((companyName && CIN) ^ instituteName ^ issuerName) && designation && address)) {
       return res.send('All fields are required');
+=======
+    if (!category) {
+      return res.status(400).json({ error: 'Category is required' });
+    }
+
+    let isValid = true;
+
+    if (category === 'INDIVIDUAL') {
+      isValid = issuerName && designation && address;
+    } else if (category === 'COMPANY') {
+      isValid = issuerName && companyName && CIN && designation && address;
+    } else if (category === 'INSTITUTE') {
+      isValid = issuerName && instituteName && designation && address;
+    } else {
+      isValid = false;
+    }
+
+    if (!isValid) {
+      return res.status(400).json({ error: 'All fields are required' });
+>>>>>>> ca951bc7e4f94ba080876c9da1d6c790a8817e73
     }
 
     const updatedIssuer = await IssuerModel.findByIdAndUpdate(
@@ -269,7 +377,11 @@ export const handleDoOnboarding = async (req: Request, res: Response): Promise<R
       return res.status(404).json({ error: 'Issuer not found' });
     }
 
+<<<<<<< HEAD
     return res.json(updatedIssuer);
+=======
+    return res.status(200).json({ error: 'Issuer onboarded successfully.'});
+>>>>>>> ca951bc7e4f94ba080876c9da1d6c790a8817e73
   } catch (error) {
     if (error instanceof mongoose.Error) {
       return res.status(400).json({ error: error.message });
@@ -298,7 +410,11 @@ export const handleDeleteIssuerById = async (req: Request, res: Response): Promi
 
     await admin.auth().deleteUser(req.user.uid);
 
+<<<<<<< HEAD
     return res.json({ message: 'Issuer deleted successfully' });
+=======
+    return res.status(200).json({ message: 'Issuer deleted successfully' });
+>>>>>>> ca951bc7e4f94ba080876c9da1d6c790a8817e73
   } catch (error) {
     if (error instanceof mongoose.Error) {
       return res.status(400).json({ error: error.message });

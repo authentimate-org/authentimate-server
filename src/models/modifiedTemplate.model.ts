@@ -13,6 +13,11 @@ interface Component {
     height?: number;
     padding?: number;
     font?: string;
+<<<<<<< HEAD
+=======
+    fontFamily?: string;
+    lineHeight?: number;
+>>>>>>> ca951bc7e4f94ba080876c9da1d6c790a8817e73
     title?: string;
     weight?: number;
     color?: string;
@@ -24,7 +29,11 @@ interface ModifiedTemplate extends Document {
     projectId: mongoose.Schema.Types.ObjectId;
     issuerId: mongoose.Schema.Types.ObjectId;
     recipientName: Component;
+<<<<<<< HEAD
     qrcode: Component;
+=======
+    qrCode: Component;
+>>>>>>> ca951bc7e4f94ba080876c9da1d6c790a8817e73
     components: Component[];
 }
   
@@ -53,6 +62,11 @@ const componentSchema = new Schema<Component>({
     height: Number,
     padding: Number,
     font: String,
+<<<<<<< HEAD
+=======
+    fontFamily: String,
+    lineHeight: Number,
+>>>>>>> ca951bc7e4f94ba080876c9da1d6c790a8817e73
     title: String,
     weight: Number,
     color: String,
@@ -75,12 +89,22 @@ const modifiedTemplateSchema = new Schema<ModifiedTemplate>({
         type: componentSchema,
         required: true
     },
+<<<<<<< HEAD
     qrcode: {
+=======
+    qrCode: {
+>>>>>>> ca951bc7e4f94ba080876c9da1d6c790a8817e73
         type: componentSchema,
         required: true
     },
     components: [componentSchema]
+<<<<<<< HEAD
 }, { timestamps: true });
+=======
+},
+{ timestamps: true }
+);
+>>>>>>> ca951bc7e4f94ba080876c9da1d6c790a8817e73
 
 const ModifiedTemplateModel = mongoose.model<ModifiedTemplate>('modifiedTemplate', modifiedTemplateSchema);
 

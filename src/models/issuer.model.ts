@@ -6,6 +6,10 @@ interface Issuer extends Document {
     firebaseUid: string;
     businessMail: string;
     createdProjects: mongoose.Types.ObjectId[];
+<<<<<<< HEAD
+=======
+    totalCertifications: number;
+>>>>>>> ca951bc7e4f94ba080876c9da1d6c790a8817e73
     onboarding: boolean;
     category: 'COMPANY' | 'INSTITUTE' | 'INDIVIDUAL';
     companyName?: string;
@@ -31,6 +35,13 @@ const issuerSchema = new Schema<Issuer>({
         type: Schema.Types.ObjectId,
         ref: 'project'
     }],
+<<<<<<< HEAD
+=======
+    totalCertifications: {
+        type: Number,
+        default: 0
+    },
+>>>>>>> ca951bc7e4f94ba080876c9da1d6c790a8817e73
     onboarding: {
         type: Boolean,
         required: true,
