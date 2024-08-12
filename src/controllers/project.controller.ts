@@ -15,7 +15,6 @@ interface ProjectResponse {
   templateId: string | null;
   modifiedTemplateId: string | null;
   stage: 'PROJECT_CREATED' | 'TEMPLATE_SELECTED' | 'TEMPLATE_FINALISED' | 'CERTIFICATION_CREATED' | 'MAIL_SENT' | 'MAIL_NOT_SENT';
-  templateImageUrl: string | null;
   components?: Component[];
 }
 
@@ -66,14 +65,26 @@ export const handleGetAllProjectsByIssuerId = async (req: Request, res: Response
       return res.status(401).json({ error: 'Unauthorized (user not found)' });
     }
 
-    const allProjects = await ProjectModel.find({ issuerId: req.issuerId }, '_id projectName category stage').sort({ createdAt: -1 }).exec();
+    const allProjects = await ProjectModel
+    .find({ issuerId: req.issuerId }, '_id projectName category stage templateId')
+    .populate({ path: 'templateId', select: 'templateImageURL', model: PremadeTemplateModel })
+    .sort({ createdAt: -1 })
+    .exec();
     const issuer = await IssuerModel.findById(req.issuerId, 'totalCertifications').exec();
   
     if (allProjects.length === 0) {
       return res.status(404).json({ error: 'Projects not found' });
     }
+
+    const allProjectsResp = allProjects.map(project => ({
+      _id: project._id,
+      projectName: project.projectName,
+      category: project.category,
+      stage: project.stage,
+      templateImageUrl: project.templateId?.templateImageURL ?? null
+    }));
   
-    return res.status(200).json({ projects: allProjects, totalCertifications: issuer?.totalCertifications });
+    return res.status(200).json({ projects: allProjectsResp, totalCertifications: issuer?.totalCertifications });
   } catch (error) {
     if (error instanceof mongoose.Error) {
       return res.status(400).json({ error: error.message });
@@ -96,7 +107,7 @@ export const handleGetProjectById = async (req: Request, res: Response): Promise
       return res.status(400).json({ error: 'Invalid project ID' });
     }
 
-    const project = await ProjectModel.findById(projectId).populate('templateId').exec();
+    const project = await ProjectModel.findById(projectId).exec();
 
     if (!project) {
       return res.status(404).json({ error: 'Project not found' });
@@ -113,7 +124,6 @@ export const handleGetProjectById = async (req: Request, res: Response): Promise
       stage: project.stage,
       templateId: project.templateId?._id.toString() || null,
       modifiedTemplateId: project.modifiedTemplateId?.toString() || null,
-      templateImageUrl: project.templateId?.templateImageURL || null
     };
 
     if (project.stage === 'PROJECT_CREATED') {
