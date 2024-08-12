@@ -1,5 +1,5 @@
 import { Request, Response } from 'express'
-import mongoose from 'mongoose'
+import mongoose, { Document, Schema } from 'mongoose'
 import { IssuerModel } from '../models/issuer.model'
 import { Project, ProjectModel } from '../models/project.model'
 import { PremadeTemplateModel } from '../models/premadeTemplate.model'
@@ -13,9 +13,22 @@ interface ProjectResponse {
   projectName: string;
   category: 'EVENT' | 'COURSE' | 'COMPETITION';
   templateId: string | null;
-  modifiedTemplateId: string | null;
+  modifiedTemplateId?: string | null;
   stage: 'PROJECT_CREATED' | 'TEMPLATE_SELECTED' | 'TEMPLATE_FINALISED' | 'CERTIFICATION_CREATED' | 'MAIL_SENT' | 'MAIL_NOT_SENT';
   components?: Component[];
+}
+
+interface IPremadeTemplate {
+  _id: Schema.Types.ObjectId;
+  templateImageURL: string;
+}
+
+interface IProject extends Document {
+  _id: Schema.Types.ObjectId;
+  projectName: string;
+  category: 'EVENT' | 'COURSE' | 'COMPETITION';
+  stage: 'PROJECT_CREATED' | 'TEMPLATE_SELECTED' | 'TEMPLATE_FINALISED' | 'CERTIFICATION_CREATED' | 'MAIL_SENT' | 'MAIL_NOT_SENT';
+  templateId?: Schema.Types.ObjectId & IPremadeTemplate;
 }
 
 // Create
@@ -66,10 +79,11 @@ export const handleGetAllProjectsByIssuerId = async (req: Request, res: Response
     }
 
     const allProjects = await ProjectModel
-    .find({ issuerId: req.issuerId }, '_id projectName category stage templateId')
+    .find({ issuerId: req.issuerId })
+    .select('_id projectName category stage templateId')
     .populate({ path: 'templateId', select: 'templateImageURL', model: PremadeTemplateModel })
     .sort({ createdAt: -1 })
-    .exec();
+    .exec() as IProject[];
     const issuer = await IssuerModel.findById(req.issuerId, 'totalCertifications').exec();
   
     if (allProjects.length === 0) {
