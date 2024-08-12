@@ -83,4 +83,4 @@ const premadeTemplateSchema = new Schema<PremadeTemplate>({
 
 const PremadeTemplateModel = mongoose.model<PremadeTemplate>('premadeTemplate', premadeTemplateSchema);
 
-export { PremadeTemplateModel, Component };
+export { PremadeTemplateModel, Component, PremadeTemplate };

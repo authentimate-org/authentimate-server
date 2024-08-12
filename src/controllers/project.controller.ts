@@ -2,7 +2,7 @@ import { Request, Response } from 'express'
 import mongoose, { Document, Schema } from 'mongoose'
 import { IssuerModel } from '../models/issuer.model'
 import { Project, ProjectModel } from '../models/project.model'
-import { PremadeTemplateModel } from '../models/premadeTemplate.model'
+import { PremadeTemplateModel, PremadeTemplate } from '../models/premadeTemplate.model'
 import { ModifiedTemplateModel, Component } from '../models/modifiedTemplate.model'
 import { RecipientModel } from '../models/recipient.model'
 import { CertificationModel } from '../models/certification.model'
@@ -18,17 +18,8 @@ interface ProjectResponse {
   components?: Component[];
 }
 
-interface IPremadeTemplate {
-  _id: Schema.Types.ObjectId;
-  templateImageURL: string;
-}
-
-interface IProject extends Document {
-  _id: Schema.Types.ObjectId;
-  projectName: string;
-  category: 'EVENT' | 'COURSE' | 'COMPETITION';
-  stage: 'PROJECT_CREATED' | 'TEMPLATE_SELECTED' | 'TEMPLATE_FINALISED' | 'CERTIFICATION_CREATED' | 'MAIL_SENT' | 'MAIL_NOT_SENT';
-  templateId?: Schema.Types.ObjectId & IPremadeTemplate;
+interface PopulatedProject extends Omit<Project, 'templateId'> {
+  templateId: PremadeTemplate;
 }
 
 // Create
@@ -83,20 +74,24 @@ export const handleGetAllProjectsByIssuerId = async (req: Request, res: Response
     .select('_id projectName category stage templateId')
     .populate({ path: 'templateId', select: 'templateImageURL', model: PremadeTemplateModel })
     .sort({ createdAt: -1 })
-    .exec() as IProject[];
+    .exec();
     const issuer = await IssuerModel.findById(req.issuerId, 'totalCertifications').exec();
   
     if (allProjects.length === 0) {
       return res.status(404).json({ error: 'Projects not found' });
     }
 
-    const allProjectsResp = allProjects.map(project => ({
-      _id: project._id,
-      projectName: project.projectName,
-      category: project.category,
-      stage: project.stage,
-      templateImageUrl: project.templateId?.templateImageURL ?? null
-    }));
+    const allProjectsResp = allProjects.map(project => {
+      const populatedProject = project as unknown as PopulatedProject;
+
+      return {
+        _id: populatedProject._id,
+        projectName: populatedProject.projectName,
+        category: populatedProject.category,
+        stage: populatedProject.stage,
+        templateImageUrl: populatedProject.templateId?.templateImageURL ?? null,
+      };
+    });
   
     return res.status(200).json({ projects: allProjectsResp, totalCertifications: issuer?.totalCertifications });
   } catch (error) {
