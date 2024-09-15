@@ -1,26 +1,34 @@
 import express from "express"
 const router = express.Router()
-import authMiddleware from "../../middleware/auth.middleware"
-import emailValidatorMiddleware from '../../middleware/emailValidator.middleware'
-import { handleCreateIssuer, handleGetIssuerById, handleUpdateIssuerById, handleDeleteIssuerById } from "../../controllers/issuer.controller"
+import emailValidatorMiddleware from '../../middlewares/emailValidator.middleware'
+import { handleSignUp, handleSignIn, handleGetIssuerById, handleUpdateIssuerById, handleCheckOnboardingStatus, handleDoOnboarding, handleDeleteIssuerById } from "../../controllers/issuer.controller"
 
 
 
 router
-.route('/create')
-.post(emailValidatorMiddleware, handleCreateIssuer);
+.route('/signUp')
+.post(emailValidatorMiddleware, handleSignUp);
 
 router
-.route('/read')
-.get(authMiddleware, handleGetIssuerById);
+.route('/signIn')
+.post(emailValidatorMiddleware, handleSignIn);
+
+router
+.route('/getUser')
+.get(handleGetIssuerById);
 
 router
 .route('/update')
-.put(authMiddleware, handleUpdateIssuerById);
+.put(handleUpdateIssuerById);
 
-// router
-// .route('/delete')
-// .delete(authMiddleware, handleDeleteIssuerById);
+router
+.route('/onboarding')
+.get(handleCheckOnboardingStatus)
+.put(handleDoOnboarding);
+
+router
+.route('/delete')
+.delete(handleDeleteIssuerById);
 
 
 
