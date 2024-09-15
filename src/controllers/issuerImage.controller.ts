@@ -23,7 +23,7 @@ export const handleAddIssuerImage = async (req: Request, res: Response, next: Ne
 
   try {
     const { fields, files } = await new Promise<{ fields: any; files: any }>((resolve, reject) => {
-      form.parse(req, (err:any, fields, files) => {
+      form.parse(req, (err:any, fields:any, files:any) => {
         if (err) reject(err);
         resolve({ fields, files });
       });
