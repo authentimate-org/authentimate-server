@@ -22,8 +22,8 @@ export const handleAddIssuerImage = async (req: Request, res: Response, next: Ne
   });
 
   try {
-    const { fields, files } = await new Promise<{ fields: formidable.Fields; files: formidable.Files }>((resolve, reject) => {
-      form.parse(req, (err, fields, files) => {
+    const { fields, files } = await new Promise<{ fields: any; files: any }>((resolve, reject) => {
+      form.parse(req, (err:any, fields, files) => {
         if (err) reject(err);
         resolve({ fields, files });
       });
