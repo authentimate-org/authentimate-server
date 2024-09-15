@@ -1,6 +1,6 @@
 import express from 'express'
 const router = express.Router()
-import { handleCreateCertification, handleGetCertificationById } from '../../controllers/certification.controller'
+import { handleCreateCertification, handleGetStatusOfAllCertificationsByProjectId, handleGetCertificationById, handleUpdateCertificationByCertificationId } from '../../controllers/certification.controller'
 
 
 
@@ -9,8 +9,16 @@ router
 .post(handleCreateCertification);
 
 router
-.route('/read')
-.post(handleGetCertificationById);
+.route('/get-status')
+.post(handleGetStatusOfAllCertificationsByProjectId);
+
+router
+.route('/update')
+.put(handleUpdateCertificationByCertificationId);
+
+router
+.route('/:certificationId')
+.get(handleGetCertificationById);
 
 
 

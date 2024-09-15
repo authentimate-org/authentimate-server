@@ -1,20 +1,24 @@
 import express from "express"
 const router = express.Router()
-import premadeTemplateRoutes from "./premadeTemplate.route"
-import modifiedTemplateRoutes from "./modifiedTemplate.route"
-import certificationRoutes from "./certification.route"
-import { handleCreateProject, handleGetAllProjectsByIssuerId, handleGetProjectById, handleUpdateProjectById, handleDeleteProjectById } from '../../controllers/project.controller'
+import { handleCreateProject, handleGetAllProjectsByIssuerId, handleGetProjectById, handleGetTemplateByProjectId, handleUpdateProjectById, handleDeleteProjectById } from '../../controllers/project.controller'
 
 
 
 router
-.route("/create")
+.route('/create')
 .post(handleCreateProject);
 
 router
-.route("/read")
-.get(handleGetAllProjectsByIssuerId)
+.route('/all')
+.get(handleGetAllProjectsByIssuerId);
+
+router
+.route('/get-project')
 .post(handleGetProjectById);
+
+router
+.route('/get-template')
+.post(handleGetTemplateByProjectId);
 
 router
 .route("/update")
@@ -23,12 +27,6 @@ router
 // router
 // .route("/delete")
 // .delete(handleUpdateProjectById);
-
-router.use('/premadeTemplate', premadeTemplateRoutes);
-
-router.use('/modifiedTemplate', modifiedTemplateRoutes);
-
-router.use('/certification', certificationRoutes);
 
 
 

@@ -1,31 +1,29 @@
 import express from 'express'
+import multer from 'multer';
 const router = express.Router()
-import { handleSelectPremadeTemplate, handleRemovePremadeTemplate } from '../../controllers/project.controller'
 import { handleCreatePremadeTemplate, handleGetAllPremadeTemplates, handleGetPremadeTemplateById, handleDeletePremadeTemplateById } from '../../controllers/premadeTemplate.controller'
+import { handleSelectPremadeTemplate } from '../../controllers/project.controller'
 
+
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
 
 
 router
 .route('/create')
-.post(handleCreatePremadeTemplate);
+.post(upload.single('image'), handleCreatePremadeTemplate);
 
 router
-.route('/read')
-.get(handleGetAllPremadeTemplates)
+.route('/all')
+.get(handleGetAllPremadeTemplates);
+
+router
+.route('/')
 .post(handleGetPremadeTemplateById);
 
-// router
-// .route('/delete')
-// .delete(handleDeletePremadeTemplateById);
-
 router
-.route('/select')
-.post(handleSelectPremadeTemplate);
-
-router
-.route('/remove')
-.post(handleRemovePremadeTemplate);
-
+.route('/add-to-project')
+.put(handleSelectPremadeTemplate);
 
 
 export default router

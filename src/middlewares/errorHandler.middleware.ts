@@ -7,6 +7,8 @@ const errorHandlerMiddleware = (
     res: any,
     next: () => void
 ) => {
+    console.log("---errorHandlerMiddleware---");
+    console.log(err);
     let error: AppError;
 
     if (err instanceof AppError) {

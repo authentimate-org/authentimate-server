@@ -1,61 +1,86 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
-interface position {
-    x: number;
-    y: number;
-};
-
-interface size {
-    height: number;
-    width: number;
-};
-
-interface text {
-    content: String;
-    position: position;
-    color: String;
-    fontFamily: String;
-    fontSize: number;
-    fontWeight: String;
-};
-
-interface graphicElement {
-    svg: String;
-    position: position;
-    colors: { [key: string]: string };
-    size: size;
+interface Component {
+    id: number;
+    name: string;
+    type: string;
+    z_index: number;
+    left?: number;
+    top?: number;
+    opacity?: number;
+    rotate?: number;
+    width?: number;
+    height?: number;
+    padding?: number;
+    font?: string;
+    fontFamily?: string;
+    lineHeight?: number;
+    title?: string;
+    weight?: number;
+    color?: string;
+    radius?: number;
+    image?: string;
 }
-
-interface PremadeTemplate {
-    texts: text[];
-    recipientName: text;
-    graphicElements: graphicElement[];
-    bgColor: String;
-    templateImageURL: String;
-};
-
-const premadeTemplateSchema = new Schema<PremadeTemplate & Document>({
-    texts: [{
-        type: Schema.Types.Mixed,
-        required: true
-    }],
-    recipientName: {
-        type: Schema.Types.Mixed,
+  
+interface PremadeTemplate extends Document {
+    recipientName: Component;
+    qrCode: Component;
+    components: Component[];
+    templateImageURL: string;
+}
+  
+const componentSchema = new Schema<Component>({
+    id: {
+        type: Number,
         required: true
     },
-    graphicElements: [{
-        type: Schema.Types.Mixed
-    }],  
-    bgColor: {
+    name: {
         type: String,
         required: true
     },
+    type: {
+        type: String,
+        required: true
+    },
+    z_index: {
+        type: Number,
+        required: true
+    },
+    left: Number,
+    top: Number,
+    opacity: Number,
+    rotate: Number,
+    width: Number,
+    height: Number,
+    padding: Number,
+    font: String,
+    fontFamily: String,
+    lineHeight: Number,
+    title: String,
+    weight: Number,
+    color: String,
+    radius: Number,
+    image: String
+});
+  
+const premadeTemplateSchema = new Schema<PremadeTemplate>({
+    recipientName: {
+        type: componentSchema,
+        required: true
+    },
+    qrCode: {
+        type: componentSchema,
+        required: true
+    },
+    components: [componentSchema],
     templateImageURL: {
         type: String,
         required: true
     }
-});
+},
+{ timestamps: true }
+);
 
-const PremadeTemplateModel = mongoose.model<PremadeTemplate & Document>('premadeTemplate', premadeTemplateSchema);
+const PremadeTemplateModel = mongoose.model<PremadeTemplate>('premadeTemplate', premadeTemplateSchema);
 
-export { PremadeTemplate, PremadeTemplateModel };
+export { PremadeTemplateModel, Component, PremadeTemplate };
